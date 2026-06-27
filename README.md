@@ -291,7 +291,7 @@ class Post(BaseModel):
     text: str | None              # body / content
     url: str | None               # external link
     author: str | None
-    score: int | None
+    score: int | None             # source-relative; NOT comparable across sources
     comment_count: int | None
     created_at: datetime | None   # UTC-aware
     source_url: str               # direct link on the source platform
@@ -301,6 +301,12 @@ class Post(BaseModel):
 
 All datetimes are normalized to UTC. Posts are deduplicated by `(source, id)` and
 sorted descending by `(created_at, id)` for deterministic output.
+
+> **`score` is source-relative.** Each source defines it differently — Hacker News
+> points, Lobsters score, GitHub stars (for `search_repos`), and `None` for arXiv
+> and RSS. The values are **not comparable across sources**, so don't rank a mixed
+> feed by `score` directly. Compare within a single `source`, or use a source-aware
+> ranking of your own. Output is ordered by recency (`created_at`), not by `score`.
 
 ## Collector invariants
 

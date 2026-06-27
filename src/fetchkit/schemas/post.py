@@ -46,7 +46,14 @@ class Post(FetchkitBaseModel):
     text: Optional[str] = Field(default=None, description="Post text/body content")
     url: Optional[str] = Field(default=None, description="Link URL if external")
     author: Optional[str] = Field(default=None, description="Post author username")
-    score: Optional[int] = Field(default=None, description="Post score/points")
+    score: Optional[int] = Field(
+        default=None,
+        description=(
+            "Source-relative score/points (e.g. HN points, Lobsters score, GitHub "
+            "stars; None for arXiv/RSS). NOT comparable across sources — compare "
+            "only within the same 'source'."
+        ),
+    )
     comment_count: Optional[int] = Field(default=None, description="Number of comments")
     created_at: Optional[datetime] = Field(default=None, description="When post was created")
     source_url: str = Field(description="Direct link to post on source platform")
