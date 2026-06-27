@@ -105,7 +105,18 @@ fetchkit run config.yaml --window "6h"      # override the time window at runtim
 fetchkit run config.yaml --compact          # single-line JSON
 fetchkit run config.yaml --fail-on-error    # exit 1 if any source failed
 fetchkit validate config.yaml               # validate a config without fetching
+fetchkit schema                             # JSON Schema for every config/output model
 python -m fetchkit run config.yaml          # module form, identical behavior
+```
+
+`fetchkit schema` lets an agent discover what it can fetch — it prints the JSON
+Schema (with field descriptions) for the top-level config, the shared HTTP
+settings, every builtin fetcher's typed config, and the canonical `Post` output —
+so a config can be written without knowing the YAML format out of band:
+
+```bash
+fetchkit schema | jq '.fetchers | keys'     # ["arxiv","github","hackernews","lobsters","rss"]
+fetchkit schema -o schema.json              # write to a file; supports --compact too
 ```
 
 Output shape:
@@ -185,16 +196,21 @@ resolved pair. The same parsing is available programmatically via
 | `include_content`      | true    | Include full entry content     |
 | `allow_local_files`    | false   | Permit local-path / `file://` feeds |
 
-`feeds[].url` is restricted to HTTP(S) URLs by default. Setting
-`allow_local_files: true` additionally permits local file paths and `file://`
-URLs — see the security note below before enabling it.
+`feeds[].url` is restricted to HTTP(S) URLs by default, and each URL's host must
+resolve to a **public** address — feeds pointing at loopback, private (RFC-1918),
+link-local, or cloud-metadata (`169.254.169.254`) hosts are refused to prevent
+SSRF. Setting `allow_local_files: true` additionally permits local file paths and
+`file://` URLs *and* opts out of the SSRF guard (it declares the config trusted) —
+see the security note below before enabling it.
 
 > **⚠️ Security — untrusted configs.** fetchkit is built to run YAML that may be
-> produced by an LLM/agent. With `allow_local_files: true`, a config could point a
-> "feed" at an arbitrary local path (e.g. `file:///etc/passwd`) and surface its
-> contents in `post.text`. Local file reads are therefore **off by default**;
-> enable them only for configs and fixtures you trust. Keep the default (`false`)
-> when feeding fetchkit configs you did not author.
+> produced by an LLM/agent. By default it blocks two abuse vectors in RSS feed
+> URLs: local file reads (e.g. `file:///etc/passwd`) and SSRF to internal
+> addresses (e.g. `http://169.254.169.254/...` or `http://127.0.0.1`). Both
+> protections are **on by default**. `allow_local_files: true` turns *both* off, so
+> enable it only for configs and fixtures you trust. The SSRF guard is reasonable,
+> not perfect — it checks the host at request time and does not defend against DNS
+> rebinding or redirects to private hosts.
 
 ### arXiv (`type: arxiv`)
 
@@ -275,7 +291,7 @@ class Post(BaseModel):
     text: str | None              # body / content
     url: str | None               # external link
     author: str | None
-    score: int | None
+    score: int | None             # source-relative; NOT comparable across sources
     comment_count: int | None
     created_at: datetime | None   # UTC-aware
     source_url: str               # direct link on the source platform
@@ -285,6 +301,12 @@ class Post(BaseModel):
 
 All datetimes are normalized to UTC. Posts are deduplicated by `(source, id)` and
 sorted descending by `(created_at, id)` for deterministic output.
+
+> **`score` is source-relative.** Each source defines it differently — Hacker News
+> points, Lobsters score, GitHub stars (for `search_repos`), and `None` for arXiv
+> and RSS. The values are **not comparable across sources**, so don't rank a mixed
+> feed by `score` directly. Compare within a single `source`, or use a source-aware
+> ranking of your own. Output is ordered by recency (`created_at`), not by `score`.
 
 ## Collector invariants
 

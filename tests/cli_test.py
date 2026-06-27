@@ -143,6 +143,33 @@ def test_validate_ok(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None
     assert capsys.readouterr().out == ""  # validate writes to stderr only
 
 
+def test_schema_emits_valid_json(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(["schema"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)  # stdout must be valid JSON
+    assert set(payload) == {"version", "config", "http", "fetchers", "post"}
+    assert "hackernews" in payload["fetchers"]
+
+
+def test_schema_compact_is_single_line(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(["schema", "--compact"])
+    assert code == 0
+    out = capsys.readouterr().out.strip()
+    assert "\n" not in out
+    assert "hackernews" in json.loads(out)["fetchers"]
+
+
+def test_schema_output_to_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    out_file = tmp_path / "schema.json"
+    code = main(["schema", "-o", str(out_file)])
+    assert code == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""  # nothing on stdout when writing to a file
+    assert "Wrote JSON to" in captured.err
+    payload = json.loads(out_file.read_text(encoding="utf-8"))
+    assert set(payload["fetchers"]) >= {"hackernews", "rss", "arxiv", "github", "lobsters"}
+
+
 def test_validate_invalid_exit_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     config = _write_config(
         tmp_path,

@@ -122,6 +122,29 @@ def test_local_file_feed_rejected_by_default() -> None:
     assert all("allow_local_files" in str(e) for e in result.errors)
 
 
+def test_private_address_feed_blocked_by_default() -> None:
+    """An untrusted config cannot point a feed at an internal address (SSRF)."""
+    config = RSSFetchConfig(
+        feeds=[
+            RSSFeedDescriptor(url=str(RSS_FIXTURE.absolute())),  # local: rejected separately
+            RSSFeedDescriptor(url="http://169.254.169.254/latest/meta-data/"),
+            RSSFeedDescriptor(url="http://127.0.0.1:6379/feed.xml"),
+        ],
+        start_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        end_time=datetime(2026, 12, 31, tzinfo=timezone.utc),
+    )
+
+    # No client is touched: the guard raises before any request is made.
+    mock_client = MagicMock()
+    with patch("fetchkit.fetchers.rss.get_default_client", return_value=mock_client):
+        result = fetch_posts_with_errors(config)
+
+    mock_client.get.assert_not_called()
+    assert result.posts == []
+    blocked = [e for e in result.errors if "non-public address" in str(e)]
+    assert len(blocked) == 2
+
+
 def test_fetch_posts_with_errors_reports_per_feed_failures() -> None:
     config = RSSFetchConfig(
         feeds=[
