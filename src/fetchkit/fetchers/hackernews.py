@@ -33,6 +33,53 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
+# Algolia response -> canonical model converters
+#
+# These isolate Algolia/HN-specific field names (objectID, story_text, points,
+# num_comments, ...) here in the fetcher, keeping the canonical Post/Comment
+# models clean — matching how the other fetchers convert their responses locally.
+# =============================================================================
+
+def _hit_to_comment(hit: dict[str, Any]) -> Comment:
+    """Convert an Algolia HN comment hit into a canonical Comment."""
+    parent_id = hit.get("parent_id")
+    story_id = hit.get("story_id")
+
+    # Handle a missing objectID gracefully.
+    comment_id = hit.get("objectID")
+    if comment_id is None:
+        comment_id = "unknown"
+
+    return Comment(
+        id=str(comment_id),
+        author=hit.get("author"),
+        text=hit.get("comment_text"),
+        score=hit.get("points"),
+        created_at=hit.get("created_at"),
+        parent_id=str(parent_id) if parent_id is not None else None,
+        story_id=str(story_id) if story_id is not None else None,
+    )
+
+
+def _hit_to_post(hit: dict[str, Any]) -> Post:
+    """Convert an Algolia HN story hit into a canonical Post."""
+    post_id = str(hit.get("objectID", ""))
+    return Post(
+        id=post_id,
+        source=SOURCE_NAME,
+        title=hit.get("title"),
+        text=hit.get("story_text"),
+        url=hit.get("url"),
+        author=hit.get("author"),
+        score=hit.get("points"),
+        comment_count=hit.get("num_comments"),
+        created_at=hit.get("created_at"),
+        source_url=HACKERNEWS_ITEM_URL.format(item_id=post_id),
+        comments=[],
+    )
+
+
+# =============================================================================
 # Sorting Utilities
 # =============================================================================
 
@@ -157,7 +204,7 @@ def fetch_comments(post_id: str, config: CommentFetchConfig) -> list[Comment]:
         if not hits:
             break
 
-        all_comments.extend([Comment.from_api(hit) for hit in hits])
+        all_comments.extend([_hit_to_comment(hit) for hit in hits])
 
         page += 1
         if page >= data.get("nbPages", 0):
@@ -217,7 +264,7 @@ def _fetch_raw_posts(
             break
 
         for hit in hits:
-            raw_posts.append(Post.from_api(hit, SOURCE_NAME, HACKERNEWS_ITEM_URL))
+            raw_posts.append(_hit_to_post(hit))
             if len(raw_posts) >= fetch_limit:
                 break
 

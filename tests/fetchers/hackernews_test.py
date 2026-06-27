@@ -6,6 +6,8 @@ from fetchkit.fetchers.hackernews import (
     fetch_posts,
     fetch_comments,
     _build_comment_tree,
+    _hit_to_post,
+    _hit_to_comment,
     ALGOLIA_API_BASE,
 )
 from fetchkit.fetchers.hackernews import fetch as fetch_via_protocol
@@ -152,3 +154,67 @@ def test_fetch_posts_comment_failure_is_isolated_per_post() -> None:
     assert [p.id for p in result] == ["1", "2"]
     assert len(result[0].comments) == 1
     assert result[1].comments == []
+
+
+# ---------------------------------------------------------------------------
+# Algolia hit -> canonical model converters
+# ---------------------------------------------------------------------------
+
+def test_hit_to_comment() -> None:
+    hit = {
+        "objectID": "123",
+        "author": "user1",
+        "comment_text": "Hello world",
+        "points": 10,
+        "created_at": "2024-01-01T00:00:00Z",
+        "parent_id": 456,  # coerced from int
+        "story_id": 789,  # coerced from int
+    }
+    comment = _hit_to_comment(hit)
+    assert comment.id == "123"
+    assert comment.author == "user1"
+    assert comment.text == "Hello world"
+    assert comment.score == 10
+    assert comment.parent_id == "456"
+    assert comment.story_id == "789"
+    assert isinstance(comment.created_at, datetime)
+
+
+def test_hit_to_comment_malformed() -> None:
+    """Missing objectID falls back to a sentinel id."""
+    comment = _hit_to_comment({"author": "bot", "comment_text": "spam"})
+    assert comment.id == "unknown"
+    assert comment.author == "bot"
+
+
+def test_hit_to_post() -> None:
+    hit = {
+        "objectID": "111",
+        "title": "Post Title",
+        "story_text": "Post body",
+        "url": "https://example.com",
+        "author": "author1",
+        "points": 100,
+        "num_comments": 20,
+        "created_at": "2024-01-01T00:00:00Z",
+    }
+    post = _hit_to_post(hit)
+    assert post.id == "111"
+    assert post.source == Source.HACKERNEWS
+    assert post.title == "Post Title"
+    assert post.text == "Post body"
+    assert post.url == "https://example.com"
+    assert post.score == 100
+    assert post.comment_count == 20
+    assert post.source_url == "https://news.ycombinator.com/item?id=111"
+
+
+def test_hit_to_post_normalizes_datetime_to_utc() -> None:
+    """Both aware and naive timestamps come out UTC-aware."""
+    aware = _hit_to_post({"objectID": "1", "created_at": "2024-01-01T12:00:00Z"})
+    assert aware.created_at is not None
+    assert aware.created_at.tzinfo == timezone.utc
+
+    naive = _hit_to_post({"objectID": "2", "created_at": "2024-01-01T12:00:00"})
+    assert naive.created_at is not None
+    assert naive.created_at.tzinfo == timezone.utc

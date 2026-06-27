@@ -37,27 +37,6 @@ class Comment(FetchkitBaseModel):
     story_id: Optional[str] = Field(default=None, description="Parent story/post ID")
     replies: list["Comment"] = Field(default_factory=list, description="Direct replies to this comment")
 
-    @classmethod
-    def from_api(cls, hit: dict) -> "Comment":
-        """Create a Comment from an API response hit."""
-        parent_id = hit.get("parent_id")
-        story_id = hit.get("story_id")
-
-        # Ensure we handle missing objectID gracefully
-        comment_id = hit.get("objectID")
-        if comment_id is None:
-            comment_id = "unknown"
-
-        return cls(
-            id=str(comment_id),
-            author=hit.get("author"),
-            text=hit.get("comment_text"),
-            score=hit.get("points"),
-            created_at=hit.get("created_at"),
-            parent_id=str(parent_id) if parent_id is not None else None,
-            story_id=str(story_id) if story_id is not None else None,
-        )
-
 
 class Post(FetchkitBaseModel):
     """Canonical post model for content from any source."""
@@ -80,21 +59,3 @@ class Post(FetchkitBaseModel):
             "core model stable while letting fetchers carry domain detail."
         ),
     )
-
-    @classmethod
-    def from_api(cls, hit: dict, source: Source, item_url_template: str) -> "Post":
-        """Create a Post from an API response hit."""
-        post_id = str(hit.get("objectID", ""))
-        return cls(
-            id=post_id,
-            source=source,
-            title=hit.get("title"),
-            text=hit.get("story_text"),
-            url=hit.get("url"),
-            author=hit.get("author"),
-            score=hit.get("points"),
-            comment_count=hit.get("num_comments"),
-            created_at=hit.get("created_at"),
-            source_url=item_url_template.format(item_id=post_id),
-            comments=[],
-        )

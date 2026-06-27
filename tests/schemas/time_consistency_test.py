@@ -52,24 +52,3 @@ def test_post_time_consistency() -> None:
     )
     assert post.created_at is not None
     assert post.created_at.tzinfo == timezone.utc
-
-
-def test_post_from_api_consistency() -> None:
-    """Test that Post.from_api resulting objects have UTC datetimes."""
-    hit = {
-        "objectID": "123",
-        "title": "HN Post",
-        "created_at": "2024-01-01T12:00:00Z",
-    }
-    post = Post.from_api(hit, Source.HACKERNEWS, "http://hn.com/{item_id}")
-    assert post.created_at is not None
-    assert post.created_at.tzinfo == timezone.utc
-
-    hit_naive = {
-        "objectID": "124",
-        "title": "HN Post Naive",
-        "created_at": "2024-01-01T12:00:00",
-    }
-    post_naive = Post.from_api(hit_naive, Source.HACKERNEWS, "http://hn.com/{item_id}")
-    assert post_naive.created_at is not None
-    assert post_naive.created_at.tzinfo == timezone.utc
