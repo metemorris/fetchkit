@@ -1,5 +1,6 @@
 # fetchkit
 
+[![CI](https://github.com/metemorris/fetchkit/actions/workflows/ci.yml/badge.svg)](https://github.com/metemorris/fetchkit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/fetchkit-agents.svg)](https://pypi.org/project/fetchkit-agents/)
 [![Python versions](https://img.shields.io/pypi/pyversions/fetchkit-agents.svg)](https://pypi.org/project/fetchkit-agents/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
