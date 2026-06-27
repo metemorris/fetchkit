@@ -105,7 +105,18 @@ fetchkit run config.yaml --window "6h"      # override the time window at runtim
 fetchkit run config.yaml --compact          # single-line JSON
 fetchkit run config.yaml --fail-on-error    # exit 1 if any source failed
 fetchkit validate config.yaml               # validate a config without fetching
+fetchkit schema                             # JSON Schema for every config/output model
 python -m fetchkit run config.yaml          # module form, identical behavior
+```
+
+`fetchkit schema` lets an agent discover what it can fetch — it prints the JSON
+Schema (with field descriptions) for the top-level config, the shared HTTP
+settings, every builtin fetcher's typed config, and the canonical `Post` output —
+so a config can be written without knowing the YAML format out of band:
+
+```bash
+fetchkit schema | jq '.fetchers | keys'     # ["arxiv","github","hackernews","lobsters","rss"]
+fetchkit schema -o schema.json              # write to a file; supports --compact too
 ```
 
 Output shape:

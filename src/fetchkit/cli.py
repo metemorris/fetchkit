@@ -7,9 +7,12 @@ YAML spec and parse structured JSON from stdout::
     fetchkit run config.yaml -o out.json     # write JSON to a file instead of stdout
     fetchkit run config.yaml --fail-on-error # exit 1 if any source failed
     fetchkit validate config.yaml            # check a config without fetching
+    fetchkit schema                          # JSON Schema for every config/output model
 
-stdout carries only JSON (for ``run``) so it is safe to pipe into ``jq`` or parse
-programmatically. Diagnostics and ``--verbose`` logging go to stderr.
+stdout carries only JSON (for ``run`` and ``schema``) so it is safe to pipe into
+``jq`` or parse programmatically. Diagnostics and ``--verbose`` logging go to stderr.
+``schema`` lets an agent discover the available fetchers and their options without
+being told the YAML format out of band.
 
 Exit codes::
 
@@ -28,6 +31,7 @@ from typing import Any, Optional, Sequence
 from fetchkit import __version__
 from fetchkit.collector import collect_all
 from fetchkit.config_loader import ConfigError, load_config
+from fetchkit.schemas.describe import build_schema_document
 from fetchkit.utils.time import resolve_window
 
 
@@ -42,7 +46,12 @@ def _emit_json(payload: Any, indent: Optional[int], output: Optional[str]) -> No
         sys.stdout.write(text + "\n")
         return
     Path(output).expanduser().write_text(text + "\n", encoding="utf-8")
-    print(f"Wrote {payload['count']} post(s) to {output}", file=sys.stderr)
+    # Confirmation goes to stderr so stdout stays empty when writing to a file.
+    # Include the post count when the payload carries one (the `run` result).
+    if "count" in payload:
+        print(f"Wrote {payload['count']} post(s) to {output}", file=sys.stderr)
+    else:
+        print(f"Wrote JSON to {output}", file=sys.stderr)
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -99,6 +108,14 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_schema(args: argparse.Namespace) -> int:
+    """Emit JSON Schema for every config and output model on stdout."""
+    payload = build_schema_document()
+    indent = None if args.compact else args.indent
+    _emit_json(payload, indent, args.output)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the top-level argument parser with ``run`` and ``validate``."""
     parser = argparse.ArgumentParser(
@@ -145,6 +162,23 @@ def build_parser() -> argparse.ArgumentParser:
     validate = sub.add_parser("validate", help="Validate a config without fetching.")
     validate.add_argument("config", help="Path to the YAML config file.")
     validate.set_defaults(func=_cmd_validate)
+
+    schema = sub.add_parser(
+        "schema", help="Print JSON Schema for configs and output to stdout."
+    )
+    schema.add_argument(
+        "-o", "--output", default=None, metavar="PATH",
+        help="Write JSON to this file instead of stdout.",
+    )
+    schema.add_argument(
+        "--indent", type=int, default=2,
+        help="JSON indentation for pretty output (default: 2).",
+    )
+    schema.add_argument(
+        "--compact", action="store_true",
+        help="Emit single-line JSON (overrides --indent).",
+    )
+    schema.set_defaults(func=_cmd_schema)
 
     return parser
 
