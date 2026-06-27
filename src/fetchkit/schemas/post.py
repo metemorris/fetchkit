@@ -1,0 +1,100 @@
+"""
+Post and Comment schemas.
+
+Canonical data models for content fetched from sources.
+These are the stable contracts that flow out of fetchkit.
+"""
+
+from datetime import datetime
+from enum import Enum
+from typing import Any, Optional
+
+from pydantic import Field
+from fetchkit.schemas.base import FetchkitBaseModel
+
+
+class Source(str, Enum):
+    """Builtin source identifiers.
+
+    Advisory only: ``Post.source`` is a free ``str``, so fetchers may use any
+    identifier. These constants name the sources fetchkit ships with.
+    """
+    HACKERNEWS = "hackernews"
+    RSS = "rss"
+    ARXIV = "arxiv"
+    GITHUB = "github"
+    LOBSTERS = "lobsters"
+
+
+class Comment(FetchkitBaseModel):
+    """A comment on a post."""
+    id: str = Field(description="Unique comment ID")
+    author: Optional[str] = Field(default=None, description="Comment author username")
+    text: Optional[str] = Field(default=None, description="Comment text content")
+    score: Optional[int] = Field(default=None, description="Comment score/points")
+    created_at: Optional[datetime] = Field(default=None, description="When comment was posted")
+    parent_id: Optional[str] = Field(default=None, description="Parent comment ID if nested")
+    story_id: Optional[str] = Field(default=None, description="Parent story/post ID")
+    replies: list["Comment"] = Field(default_factory=list, description="Direct replies to this comment")
+
+    @classmethod
+    def from_api(cls, hit: dict) -> "Comment":
+        """Create a Comment from an API response hit."""
+        parent_id = hit.get("parent_id")
+        story_id = hit.get("story_id")
+
+        # Ensure we handle missing objectID gracefully
+        comment_id = hit.get("objectID")
+        if comment_id is None:
+            comment_id = "unknown"
+
+        return cls(
+            id=str(comment_id),
+            author=hit.get("author"),
+            text=hit.get("comment_text"),
+            score=hit.get("points"),
+            created_at=hit.get("created_at"),
+            parent_id=str(parent_id) if parent_id is not None else None,
+            story_id=str(story_id) if story_id is not None else None,
+        )
+
+
+class Post(FetchkitBaseModel):
+    """Canonical post model for content from any source."""
+    id: str = Field(description="Unique post ID")
+    source: str = Field(description="Source identifier (e.g., 'hackernews', 'rss')")
+    title: Optional[str] = Field(default=None, description="Post title")
+    text: Optional[str] = Field(default=None, description="Post text/body content")
+    url: Optional[str] = Field(default=None, description="Link URL if external")
+    author: Optional[str] = Field(default=None, description="Post author username")
+    score: Optional[int] = Field(default=None, description="Post score/points")
+    comment_count: Optional[int] = Field(default=None, description="Number of comments")
+    created_at: Optional[datetime] = Field(default=None, description="When post was created")
+    source_url: str = Field(description="Direct link to post on source platform")
+    comments: list[Comment] = Field(default_factory=list, description="Fetched comments")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Source-specific extra fields that don't map to a canonical column "
+            "(e.g. arxiv categories/DOI, GitHub repo/language, tickers). Keeps the "
+            "core model stable while letting fetchers carry domain detail."
+        ),
+    )
+
+    @classmethod
+    def from_api(cls, hit: dict, source: Source, item_url_template: str) -> "Post":
+        """Create a Post from an API response hit."""
+        post_id = str(hit.get("objectID", ""))
+        return cls(
+            id=post_id,
+            source=source,
+            title=hit.get("title"),
+            text=hit.get("story_text"),
+            url=hit.get("url"),
+            author=hit.get("author"),
+            score=hit.get("points"),
+            comment_count=hit.get("num_comments"),
+            created_at=hit.get("created_at"),
+            source_url=item_url_template.format(item_id=post_id),
+            comments=[],
+        )

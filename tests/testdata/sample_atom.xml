@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Test Atom Feed</title>
+  <link href="https://example.com/atom" rel="self"/>
+  <updated>2026-01-26T15:00:00Z</updated>
+  <author>
+    <name>Atom Author</name>
+  </author>
+  <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>
+
+  <entry>
+    <title>Atom Entry 1</title>
+    <link href="https://example.com/atom/1"/>
+    <id>atom-id-1</id>
+    <updated>2026-01-26T10:00:00Z</updated>
+    <summary>Atom summary 1</summary>
+    <content type="html">Atom &lt;b&gt;content&lt;/b&gt; 1</content>
+  </entry>
+  
+  <entry>
+    <title>Duplicate Item</title>
+    <link href="https://example.com/1"/>
+    <id>guid-1</id>
+    <updated>2026-01-26T12:00:00Z</updated>
+    <summary>This has the same ID as an item in the RSS feed.</summary>
+  </entry>
+</feed>

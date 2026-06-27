@@ -1,0 +1,36 @@
+# Example fetchkit config. Run with:  fetchkit run examples/example_config.yaml
+#
+# Use a relative `window` so an agent doesn't have to compute timestamps.
+window: "last 24 hours"
+
+fetchers:
+  - type: hackernews
+    posts:
+      max_items: 20
+      order: top
+
+  - type: arxiv
+    categories: ["cs.AI", "cs.LG"]
+    max_items: 20
+
+  - type: github
+    resource: releases
+    repos:
+      - "python/cpython"
+      - "pydantic/pydantic"
+    max_items: 20
+
+  - type: lobsters
+    listing: hottest
+    max_items: 20
+
+  - type: rss
+    feeds:
+      - url: "https://feeds.bbci.co.uk/news/rss.xml"
+        name: "BBC News"
+    max_items_per_feed: 20
+
+http:           # optional
+  timeout: 15
+  max_retries: 5
+  rate_limit_per_host: 2.0

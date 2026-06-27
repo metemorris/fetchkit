@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+ <title>Test RSS Feed</title>
+ <description>A test feed for Distill</description>
+ <link>https://example.com</link>
+ <lastBuildDate>Tue, 27 Jan 2026 00:00:00 +0000</lastBuildDate>
+ <pubDate>Tue, 26 Jan 2026 00:00:00 +0000</pubDate>
+ <item>
+  <title>Item 1: GUID and Published</title>
+  <description>This item has a GUID and a published date.</description>
+  <link>https://example.com/1</link>
+  <guid isPermaLink="false">guid-1</guid>
+  <pubDate>Mon, 26 Jan 2026 12:00:00 +0000</pubDate>
+  <author>author1@example.com</author>
+ </item>
+ <item>
+  <title>Item 2: No GUID, Link only</title>
+  <description>This item has no GUID, but has a link and a published date.</description>
+  <link>https://example.com/2</link>
+  <pubDate>Mon, 26 Jan 2026 13:00:00 +0000</pubDate>
+ </item>
+ <item>
+  <title>Item 3: Updated only</title>
+  <description>This item has no pubDate, but has an updated date (represented as pubDate in RSS 2.0 often, but let's assume it might be missing).</description>
+  <link>https://example.com/3</link>
+  <!-- In RSS 2.0 it's just pubDate, but feedparser handles many extensions -->
+  <pubDate>Mon, 26 Jan 2026 14:00:00 +0000</pubDate>
+ </item>
+ <item>
+  <title>Item 4: Missing Date</title>
+  <description>This item should be excluded.</description>
+  <link>https://example.com/4</link>
+ </item>
+</channel>
+</rss>
