@@ -1,5 +1,9 @@
 # fetchkit
 
+[![PyPI](https://img.shields.io/pypi/v/fetchkit-agents.svg)](https://pypi.org/project/fetchkit-agents/)
+[![Python versions](https://img.shields.io/pypi/pyversions/fetchkit-agents.svg)](https://pypi.org/project/fetchkit-agents/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A YAML-configured data-fetching library for agentic applications.
 
 `fetchkit` collects posts and comments from sources (Hacker News, RSS/Atom, arXiv,
