@@ -19,7 +19,7 @@ See the README for the full configuration reference and the guide to adding
 fetchers.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from fetchkit.collector import collect_all
 from fetchkit.config_loader import load_config, ConfigError

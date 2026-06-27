@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Distribution name on PyPI. The importable package and CLI are still `fetchkit`;
 # the `fetchkit` PyPI name was already taken by an unrelated project.
 name = "fetchkit-agents"
-version = "0.1.0"
+version = "0.1.1"
 description = "A YAML-configured data fetching library for agentic applications."
 readme = "README.md"
 requires-python = ">=3.10"

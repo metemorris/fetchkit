@@ -4,6 +4,15 @@ All notable changes to fetchkit are documented here.
 This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-06-27
+
+Packaging and tooling release; no library code changes.
+
+### Added
+- README badges (PyPI version, supported Python versions, license, CI).
+- GitHub Actions CI running the test suite, mypy, and ruff across Python 3.10–3.13.
+- GitHub Actions release workflow that publishes to PyPI via Trusted Publishing (OIDC).
+
 ## [0.1.0] - 2026-06-27
 
 Initial public release of fetchkit — a standalone, independent library.
