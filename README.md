@@ -28,13 +28,14 @@ back clean typed data.
 ## Install
 
 ```bash
-pip install fetchkit            # once published to PyPI
+pip install fetchkit-agents     # PyPI distribution name
 
 # or install the latest from source:
 pip install "git+https://github.com/metemorris/fetchkit.git"
 ```
 
-Requires Python ≥ 3.10.
+The PyPI package is `fetchkit-agents` (the `fetchkit` name was taken), but you still
+`import fetchkit` and the CLI command is `fetchkit`. Requires Python ≥ 3.10.
 
 ## Quick start
 
