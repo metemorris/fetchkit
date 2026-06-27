@@ -7,6 +7,7 @@ from fetchkit.http.client import (
     use_client,
 )
 from fetchkit.http.rate_limit import RateLimiter
+from fetchkit.http.ssrf import BlockedURLError, guard_public_url
 
 __all__ = [
     "HttpClient",
@@ -14,4 +15,6 @@ __all__ = [
     "get_default_client",
     "set_default_client",
     "use_client",
+    "BlockedURLError",
+    "guard_public_url",
 ]

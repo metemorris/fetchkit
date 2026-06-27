@@ -14,7 +14,7 @@ from typing import Optional, Any, cast
 from urllib.parse import urlparse
 import feedparser
 
-from fetchkit.http import get_default_client
+from fetchkit.http import get_default_client, guard_public_url
 from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import RSSFetchConfig, RSSFeedDescriptor, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
@@ -179,6 +179,12 @@ def fetch_posts_with_errors(config: RSSFetchConfig) -> RSSFetchResult:
             if local_path:
                 feed = feedparser.parse(str(local_path))
             else:
+                # Security: with an untrusted config, block feed URLs whose host
+                # resolves to a non-public address (loopback, RFC-1918, cloud
+                # metadata, ...). Setting allow_local_files declares the config
+                # trusted, which also opts out of this guard.
+                if not config.allow_local_files:
+                    guard_public_url(feed_url)
                 response = client.get(feed_url, timeout=DEFAULT_TIMEOUT_S)
                 response.raise_for_status()
                 feed = feedparser.parse(response.content)

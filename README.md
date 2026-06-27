@@ -196,16 +196,21 @@ resolved pair. The same parsing is available programmatically via
 | `include_content`      | true    | Include full entry content     |
 | `allow_local_files`    | false   | Permit local-path / `file://` feeds |
 
-`feeds[].url` is restricted to HTTP(S) URLs by default. Setting
-`allow_local_files: true` additionally permits local file paths and `file://`
-URLs — see the security note below before enabling it.
+`feeds[].url` is restricted to HTTP(S) URLs by default, and each URL's host must
+resolve to a **public** address — feeds pointing at loopback, private (RFC-1918),
+link-local, or cloud-metadata (`169.254.169.254`) hosts are refused to prevent
+SSRF. Setting `allow_local_files: true` additionally permits local file paths and
+`file://` URLs *and* opts out of the SSRF guard (it declares the config trusted) —
+see the security note below before enabling it.
 
 > **⚠️ Security — untrusted configs.** fetchkit is built to run YAML that may be
-> produced by an LLM/agent. With `allow_local_files: true`, a config could point a
-> "feed" at an arbitrary local path (e.g. `file:///etc/passwd`) and surface its
-> contents in `post.text`. Local file reads are therefore **off by default**;
-> enable them only for configs and fixtures you trust. Keep the default (`false`)
-> when feeding fetchkit configs you did not author.
+> produced by an LLM/agent. By default it blocks two abuse vectors in RSS feed
+> URLs: local file reads (e.g. `file:///etc/passwd`) and SSRF to internal
+> addresses (e.g. `http://169.254.169.254/...` or `http://127.0.0.1`). Both
+> protections are **on by default**. `allow_local_files: true` turns *both* off, so
+> enable it only for configs and fixtures you trust. The SSRF guard is reasonable,
+> not perfect — it checks the host at request time and does not defend against DNS
+> rebinding or redirects to private hosts.
 
 ### arXiv (`type: arxiv`)
 
