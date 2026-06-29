@@ -32,6 +32,9 @@ back clean typed data.
   no Python required.
 - **RSS feed discovery**: `fetchkit discover "<use case>"` maps a natural-language
   query onto real RSS feeds an agent can fetch — closing the "which feed URL?" gap.
+- **Per-source discovery**: `fetchkit suggest <source>` lists the selectable knobs
+  for any source (tags, sites, arXiv categories, trending hashtags, Bluesky feeds) —
+  all zero-auth — so an agent can fill a config without guessing.
 
 ## Install
 
@@ -162,11 +165,12 @@ result = collect_all(config)
 
 ## Discovering RSS feeds
 
-Every other source has a finite, nameable set of options (`fetchkit schema`
-enumerates them). RSS is the exception: a feed is an *arbitrary URL*, so an agent
-that wants "central-bank policy" or "rust programming" has no way to know which
-feeds exist. The optional `discovery` module closes that gap — give it a
+RSS is the hardest source to discover for: a feed is an *arbitrary URL*, so an
+agent that wants "central-bank policy" or "rust programming" has no way to know
+which feeds exist. The optional `discovery` module closes that gap — give it a
 use case, get back ranked feeds you can drop straight into an `rss` fetcher.
+(The other sources have their own, simpler discovery surface — see
+[Discoverability for every source](#discoverability-for-every-source) below.)
 
 ```python
 from fetchkit.discovery import discover, to_rss_config
@@ -222,6 +226,40 @@ Discovery matches a feed's **description/metadata** (what the feed is *about*),
 not the live article stream — for the latter, fetch the feed with the `rss`
 fetcher and match individual posts. Catalog quality is the main lever on result
 quality; see `src/fetchkit/discovery/data/CATALOG.md` to extend it.
+
+## Discoverability for every source
+
+`discover` solves RSS's "which feed URL?" problem. The other sources have a
+*different* discoverability gap — *which tag / site / instance / feed do I put in
+the config?* — answered by `fetchkit suggest <source>` (and `run_suggester()` in
+Python). Each suggester is **no-auth** and returns JSON-ready rows:
+
+```bash
+fetchkit suggest lobsters                                  # all Lobsters tags
+fetchkit suggest stackexchange --site stackoverflow        # popular SO tags
+fetchkit suggest stackexchange --what sites                # available SE sites
+fetchkit suggest arxiv --query vision                      # matching arXiv categories
+fetchkit suggest github --query "language:rust stars:>5000"  # popular repos to watch
+fetchkit suggest mastodon --instance fosstodon.org         # trending hashtags
+fetchkit suggest bluesky                                   # popular custom feeds
+fetchkit suggest bluesky --what actors --query "ai"        # accounts for an author_feed
+fetchkit suggest rss --query "AI safety news"              # delegates to discover()
+```
+
+| Source | `suggest` returns | Fills config field |
+|--------|-------------------|--------------------|
+| `hackernews`    | sort orders (static — HN has no tags)         | `posts.order` |
+| `rss`           | ranked feeds (delegates to `discover`)        | `feeds` |
+| `arxiv`         | category codes + names (static taxonomy)      | `categories` |
+| `github`        | popular `owner/name` repos for a query        | `repos` |
+| `lobsters`      | all tags (from `/tags.json`)                  | `tag` |
+| `stackexchange` | popular tags, or sites (`--what sites`)       | `tagged` / `site` |
+| `bluesky`       | popular feeds, or actors (`--what actors`)    | `actor` |
+| `mastodon`      | trending hashtags on an instance              | `tag` / `instance` |
+
+> Most suggesters call the source's live API (all no-auth); `hackernews`/`arxiv`
+> are static, and `rss` reuses the offline catalog ranker. Network suggesters fail
+> gracefully (the CLI reports the error on stderr and exits non-zero).
 
 ## Configuration reference
 
@@ -393,6 +431,15 @@ validation, and tests. Add a new source via a PR or a local fork in four steps:
 
 3. Import the module in `src/fetchkit/fetchers/__init__.py` so it registers on import.
 4. Add tests (mock HTTP with the `responses` library — see `tests/fetchers/`).
+5. *(Optional)* register a discovery helper so agents can find your source's knobs:
+
+   ```python
+   from fetchkit.fetchers.suggest_registry import register_suggester
+
+   @register_suggester("mysource")
+   def suggest(*, query=None, limit=20, **kwargs) -> list[dict]:
+       return [{"tag": "…"}]   # JSON-ready rows; surfaced via `fetchkit suggest mysource`
+   ```
 
 Use `Post.metadata` for any source-specific fields that don't map to the canonical
 columns.

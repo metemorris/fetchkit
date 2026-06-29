@@ -18,12 +18,46 @@ from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import ArxivFetchConfig, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
 ARXIV_API_URL = "https://export.arxiv.org/api/query"
 SOURCE_NAME = Source.ARXIV
 DEFAULT_TIMEOUT_S = 30  # arXiv can be slow
+
+# arXiv's category taxonomy is fixed and well-known, so discoverability is a static
+# lookup (no network/auth). A representative cross-discipline subset of the most-used
+# categories — enough for an agent to pick a `categories` value without guessing.
+ARXIV_CATEGORIES: dict[str, str] = {
+    "cs.AI": "Artificial Intelligence",
+    "cs.CL": "Computation and Language (NLP)",
+    "cs.CV": "Computer Vision and Pattern Recognition",
+    "cs.LG": "Machine Learning",
+    "cs.CR": "Cryptography and Security",
+    "cs.DC": "Distributed, Parallel, and Cluster Computing",
+    "cs.DS": "Data Structures and Algorithms",
+    "cs.HC": "Human-Computer Interaction",
+    "cs.IR": "Information Retrieval",
+    "cs.NE": "Neural and Evolutionary Computing",
+    "cs.RO": "Robotics",
+    "cs.SE": "Software Engineering",
+    "cs.SY": "Systems and Control",
+    "stat.ML": "Machine Learning (Statistics)",
+    "stat.ME": "Methodology (Statistics)",
+    "math.OC": "Optimization and Control",
+    "math.PR": "Probability",
+    "math.ST": "Statistics Theory",
+    "eess.AS": "Audio and Speech Processing",
+    "eess.IV": "Image and Video Processing",
+    "eess.SP": "Signal Processing",
+    "physics.comp-ph": "Computational Physics",
+    "q-bio.NC": "Neurons and Cognition",
+    "q-bio.QM": "Quantitative Methods",
+    "q-fin.CP": "Computational Finance",
+    "q-fin.PM": "Portfolio Management",
+    "econ.EM": "Econometrics",
+}
 
 
 def _build_search_query(config: ArxivFetchConfig) -> str:
@@ -120,6 +154,16 @@ def fetch_posts(config: ArxivFetchConfig) -> list[Post]:
                 continue
         posts.append(post)
     return posts
+
+
+@register_suggester("arxiv")
+def suggest(*, query: Optional[str] = None, limit: int = 100, **kwargs: Any) -> list[dict[str, Any]]:
+    """Discoverability for arXiv: list selectable categories (filtered by ``query``)."""
+    items = [{"category": code, "name": name} for code, name in ARXIV_CATEGORIES.items()]
+    if query:
+        q = query.lower()
+        items = [it for it in items if q in it["category"].lower() or q in it["name"].lower()]
+    return items[:limit]
 
 
 @register_fetcher("arxiv")

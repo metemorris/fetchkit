@@ -21,6 +21,7 @@ from fetchkit.schemas.fetcher import (
 )
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +179,44 @@ def fetch_posts(config: StackExchangeFetchConfig) -> list[Post]:
             logger.warning("Failed to fetch Stack Exchange answers: %s", exc)
 
     return posts
+
+
+@register_suggester("stackexchange")
+def suggest(
+    *,
+    site: str = "stackoverflow",
+    what: Optional[str] = None,
+    query: Optional[str] = None,
+    limit: int = 25,
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Discoverability for Stack Exchange (no auth).
+
+    ``what='sites'`` lists the available sites (their ``site`` parameter);
+    ``what='tags'`` (default) lists the most popular tags on ``site``.
+    """
+    client = get_default_client()
+    if (what or "tags") == "sites":
+        resp = client.get(
+            f"{API_BASE}/sites",
+            params={"pagesize": min(PAGE_SIZE, limit)},
+            timeout=DEFAULT_TIMEOUT_S,
+        )
+        resp.raise_for_status()
+        out: list[dict[str, Any]] = []
+        for s in resp.json().get("items", []):
+            name = s.get("name")
+            if query and query.lower() not in (name or "").lower():
+                continue
+            out.append({"site": s.get("api_site_parameter"), "name": name, "audience": s.get("audience")})
+        return out[:limit]
+
+    params: dict[str, Any] = {"site": site, "order": "desc", "sort": "popular", "pagesize": min(PAGE_SIZE, limit)}
+    if query:
+        params["inname"] = query
+    resp = client.get(f"{API_BASE}/tags", params=params, timeout=DEFAULT_TIMEOUT_S)
+    resp.raise_for_status()
+    return [{"tag": t.get("name"), "count": t.get("count")} for t in resp.json().get("items", [])][:limit]
 
 
 @register_fetcher("stackexchange")

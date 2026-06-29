@@ -120,3 +120,17 @@ def test_fetch_protocol_wraps_errors() -> None:
 def test_fetch_protocol_rejects_wrong_config_type() -> None:
     with pytest.raises(ValueError):
         fetch_via_protocol(RSSFetchConfig(feeds=[RSSFeedDescriptor(url="https://x/y.xml")]))
+
+
+@pytest.mark.live
+def test_mastodon_live_smoke() -> None:
+    """Hit a real Mastodon instance's public hashtag timeline (no auth). Skips on failure."""
+    config = MastodonFetchConfig(instance="mastodon.social", resource="tag", tag="ai", max_items=3)
+    result = fetch_via_protocol(config)
+    if result.errors:
+        pytest.skip(f"Live Mastodon unavailable: {result.errors[0]}")
+    if not result.posts:
+        pytest.skip("No statuses returned")
+    post = result.posts[0]
+    assert post.source == "mastodon"
+    assert post.source_url.startswith("http")

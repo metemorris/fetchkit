@@ -15,6 +15,7 @@ from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import BlueskyFetchConfig, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,55 @@ def fetch_posts(config: BlueskyFetchConfig) -> list[Post]:
             break
 
     return posts[: config.max_items]
+
+
+@register_suggester("bluesky")
+def suggest(
+    *,
+    query: Optional[str] = None,
+    what: Optional[str] = None,
+    limit: int = 25,
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Discoverability for Bluesky (no auth, public AppView).
+
+    ``what='actors'`` searches for accounts (handles) to use in an ``author_feed``;
+    ``what='feeds'`` (default) lists popular custom feed generators.
+    """
+    client = get_default_client()
+    if (what or "feeds") == "actors":
+        if not query:
+            raise ValueError("bluesky suggest with what='actors' requires a query")
+        resp = client.get(
+            f"{XRPC_BASE}/app.bsky.actor.searchActors",
+            params={"q": query, "limit": min(100, limit)},
+            timeout=DEFAULT_TIMEOUT_S,
+        )
+        resp.raise_for_status()
+        return [
+            {"handle": a.get("handle"), "displayName": a.get("displayName")}
+            for a in resp.json().get("actors", [])
+        ][:limit]
+
+    params: dict[str, Any] = {"limit": min(100, limit)}
+    if query:
+        params["query"] = query
+    resp = client.get(
+        f"{XRPC_BASE}/app.bsky.unspecced.getPopularFeedGenerators",
+        params=params,
+        timeout=DEFAULT_TIMEOUT_S,
+    )
+    resp.raise_for_status()
+    out: list[dict[str, Any]] = []
+    for f in resp.json().get("feeds", []):
+        out.append({
+            "uri": f.get("uri"),
+            "displayName": f.get("displayName"),
+            "description": f.get("description"),
+            "creator": (f.get("creator") or {}).get("handle"),
+            "likeCount": f.get("likeCount"),
+        })
+    return out[:limit]
 
 
 @register_fetcher("bluesky")

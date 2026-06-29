@@ -17,6 +17,7 @@ from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import MastodonFetchConfig, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +116,38 @@ def fetch_posts(config: MastodonFetchConfig) -> list[Post]:
         max_id = str(last_id)
 
     return posts[: config.max_items]
+
+
+@register_suggester("mastodon")
+def suggest(
+    *,
+    instance: str = "mastodon.social",
+    query: Optional[str] = None,
+    limit: int = 20,
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Discoverability for Mastodon: trending hashtags on ``instance`` (no auth)."""
+    client = get_default_client()
+    resp = client.get(
+        f"https://{instance}/api/v1/trends/tags",
+        params={"limit": min(20, limit)},
+        timeout=DEFAULT_TIMEOUT_S,
+    )
+    resp.raise_for_status()
+    out: list[dict[str, Any]] = []
+    for t in resp.json():
+        name = t.get("name")
+        if query and query.lower() not in (name or "").lower():
+            continue
+        uses: Optional[int] = None
+        history = t.get("history")
+        if isinstance(history, list):
+            try:
+                uses = sum(int(h.get("uses", 0)) for h in history)
+            except (TypeError, ValueError):
+                uses = None
+        out.append({"tag": name, "url": t.get("url"), "uses": uses})
+    return out[:limit]
 
 
 @register_fetcher("mastodon")

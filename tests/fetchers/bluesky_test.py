@@ -104,3 +104,17 @@ def test_fetch_protocol_wraps_errors() -> None:
 def test_fetch_protocol_rejects_wrong_config_type() -> None:
     with pytest.raises(ValueError):
         fetch_via_protocol(RSSFetchConfig(feeds=[RSSFeedDescriptor(url="https://x/y.xml")]))
+
+
+@pytest.mark.live
+def test_bluesky_live_smoke() -> None:
+    """Hit the real public Bluesky AppView (no auth). Skips if the network is unavailable."""
+    config = BlueskyFetchConfig(resource="search", query="python", max_items=3)
+    result = fetch_via_protocol(config)
+    if result.errors:
+        pytest.skip(f"Live Bluesky unavailable: {result.errors[0]}")
+    if not result.posts:
+        pytest.skip("No posts returned")
+    post = result.posts[0]
+    assert post.source == "bluesky"
+    assert post.source_url.startswith("http")

@@ -10,8 +10,9 @@ YAML spec and parse structured JSON from stdout::
     fetchkit schema                          # JSON Schema for every config/output model
     fetchkit discover "AI safety news"       # find RSS feeds for a use case
     fetchkit find-feeds https://example.com  # autodiscover feeds from a site
+    fetchkit suggest lobsters                # list what you can query for a source
 
-stdout carries only JSON (for ``run``, ``schema``, ``discover``, and
+stdout carries only JSON (for ``run``, ``schema``, ``discover``, ``suggest``, and
 ``find-feeds``) so it is safe to pipe into ``jq`` or parse programmatically.
 Diagnostics and ``--verbose`` logging go to stderr. ``schema`` lets an agent
 discover the available fetchers and their options without being told the YAML
@@ -163,6 +164,31 @@ def _cmd_discover(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_suggest(args: argparse.Namespace) -> int:
+    """List what you can query for a source (tags, sites, categories, feeds); emit JSON."""
+    from fetchkit.fetchers import run_suggester
+
+    params: dict[str, Any] = {"limit": args.limit}
+    for key in ("query", "site", "instance", "what"):
+        value = getattr(args, key)
+        if value is not None:
+            params[key] = value
+
+    try:
+        suggestions = run_suggester(args.source, **params)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except Exception as exc:  # network/HTTP failure — report, don't crash
+        print(f"suggest failed for {args.source}: {exc}", file=sys.stderr)
+        return 2
+
+    indent = None if args.compact else args.indent
+    payload = {"source": args.source, "count": len(suggestions), "suggestions": suggestions}
+    _emit_json(payload, indent, args.output)
+    return 0
+
+
 def _cmd_find_feeds(args: argparse.Namespace) -> int:
     """Autodiscover RSS/Atom feeds from one or more site URLs; emit JSON."""
     from fetchkit.discovery import find_feeds
@@ -293,6 +319,52 @@ def build_parser() -> argparse.ArgumentParser:
         help="Emit single-line JSON (overrides --indent).",
     )
     discover.set_defaults(func=_cmd_discover)
+
+    # `suggest` is the cross-source analog of `discover` (which is RSS-only): it
+    # lists the selectable knobs for any source — SE sites/tags, arXiv categories,
+    # Lobsters tags, Mastodon trending tags, Bluesky feeds/actors, RSS feeds.
+    from fetchkit.fetchers import list_suggesters
+
+    suggest = sub.add_parser(
+        "suggest",
+        help="List what you can query for a source (tags, sites, categories, feeds).",
+    )
+    suggest.add_argument(
+        "source", choices=list_suggesters(),
+        help="Source to get discovery suggestions for.",
+    )
+    suggest.add_argument(
+        "--query", default=None, metavar="Q",
+        help="Filter/seed term (e.g. RSS use case, GitHub repo search, Bluesky actor search).",
+    )
+    suggest.add_argument(
+        "--site", default=None,
+        help="Stack Exchange site for tag suggestions (default: stackoverflow).",
+    )
+    suggest.add_argument(
+        "--instance", default=None,
+        help="Mastodon instance host for trending tags (default: mastodon.social).",
+    )
+    suggest.add_argument(
+        "--what", default=None,
+        help="Sub-selection: stackexchange 'sites'|'tags'; bluesky 'feeds'|'actors'.",
+    )
+    suggest.add_argument(
+        "--limit", type=int, default=20, help="Max suggestions to return (default: 20).",
+    )
+    suggest.add_argument(
+        "-o", "--output", default=None, metavar="PATH",
+        help="Write JSON to this file instead of stdout.",
+    )
+    suggest.add_argument(
+        "--indent", type=int, default=2,
+        help="JSON indentation for pretty output (default: 2).",
+    )
+    suggest.add_argument(
+        "--compact", action="store_true",
+        help="Emit single-line JSON (overrides --indent).",
+    )
+    suggest.set_defaults(func=_cmd_suggest)
 
     find_feeds = sub.add_parser(
         "find-feeds",
