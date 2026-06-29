@@ -9,7 +9,10 @@ import fetchkit.fetchers.registry as registry
 
 
 def test_builtin_fetchers_registered() -> None:
-    for name in ("hackernews", "rss", "arxiv", "github", "lobsters"):
+    for name in (
+        "hackernews", "rss", "arxiv", "github", "lobsters",
+        "stackexchange", "bluesky", "mastodon",
+    ):
         assert callable(get_fetcher(name))
 
 

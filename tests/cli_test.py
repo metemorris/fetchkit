@@ -147,7 +147,9 @@ def test_schema_emits_valid_json(capsys: pytest.CaptureFixture[str]) -> None:
     code = main(["schema"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)  # stdout must be valid JSON
-    assert set(payload) == {"version", "config", "http", "fetchers", "post", "discovery"}
+    assert set(payload) == {
+        "version", "config", "http", "fetchers", "post", "discovery", "suggest",
+    }
     assert "hackernews" in payload["fetchers"]
 
 

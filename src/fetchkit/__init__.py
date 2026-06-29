@@ -19,7 +19,7 @@ See the README for the full configuration reference and the guide to adding
 fetchers.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from typing import TYPE_CHECKING, Any
 

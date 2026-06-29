@@ -6,6 +6,42 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-29
+
+### Added
+- **Three new zero-auth fetchers**, all returning the canonical `Post` model:
+  - `stackexchange` — questions (and, with `comments.fetch`, top answers as
+    `Comment`s) from the Stack Exchange API; anonymous access within the
+    300 requests/day/IP quota. Tags, answer count, and accepted-answer id are kept
+    in `post.metadata`.
+  - `bluesky` — posts from the public Bluesky AppView (`public.api.bsky.app`),
+    via full-text `search` or a single account's `author_feed`. Likes map to
+    `score`, replies to `comment_count`; `uri`/`cid`/`langs` go in `metadata`.
+  - `mastodon` — public and hashtag timelines on any instance (no auth when public
+    preview is enabled). HTML content is reduced to plain text; tags, instance, and
+    visibility are kept in `post.metadata`.
+- **Per-source discovery (`suggest`)** — a cross-source analog of RSS `discover`
+  that answers "which tag / site / instance / feed / category do I put in the
+  config?" Each fetcher registers a no-auth suggester returning JSON-ready rows:
+  - CLI: `fetchkit suggest <source>` (with `--query`, `--site`, `--instance`,
+    `--what`, `--limit`), emitting pure JSON on stdout.
+  - Python: `run_suggester(source, **params)`, plus `register_suggester` /
+    `get_suggester` / `list_suggesters` for custom sources, exported from
+    `fetchkit`.
+  - Coverage: Lobsters/Stack Exchange tags, Stack Exchange sites, arXiv categories,
+    GitHub popular repos, Mastodon trending hashtags, Bluesky feeds/actors,
+    HackerNews sort orders, and RSS (delegating to `discover`).
+- `fetchkit schema` gains a `suggest` section so an agent introspecting the tool
+  learns the per-source discovery capability, its parameters, and which config
+  field each source's suggestions fill.
+- Scheduled `live` CI workflow (`.github/workflows/live.yml`) that exercises the
+  real no-auth source and discovery endpoints weekly and on demand, skipping
+  gracefully when an upstream is unavailable.
+
+### Changed
+- Hardened Bluesky pagination against a spin when the AppView echoes a
+  non-advancing cursor while window-filtering drops every item.
+
 ## [0.2.0] - 2026-06-29
 
 ### Added
