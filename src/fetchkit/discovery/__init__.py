@@ -18,7 +18,7 @@ no extra dependencies; a local-embedding ranker is available behind the
 
 from fetchkit.discovery.autodiscover import find_feeds
 from fetchkit.discovery.catalog import load_catalog
-from fetchkit.discovery.discover import discover, to_rss_config
+from fetchkit.discovery.core import discover, to_rss_config
 from fetchkit.discovery.errors import DiscoveryBackendUnavailable, DiscoveryError
 from fetchkit.discovery.external import search_feeds_external
 from fetchkit.discovery.schemas import (

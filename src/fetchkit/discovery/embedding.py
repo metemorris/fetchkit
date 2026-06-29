@@ -3,18 +3,14 @@
 This module is imported lazily from :func:`fetchkit.discovery.ranking.get_ranker`,
 so the default install never imports ``numpy`` or ``sentence_transformers``. The
 ranker embeds the query and each candidate's :func:`feed_document` text with the
-same local model, then ranks by cosine similarity.
+same local model, then ranks by cosine similarity. Encoded document vectors are
+cached in-process, so a catalog feed is embedded at most once per process.
 
-A precomputed catalog embedding artifact (``data/embeddings.npy`` +
-``data/embeddings_meta.json``, produced offline by
-``scripts/build_discovery_index.py``) is used opportunistically when present,
-keyed by feed URL, so shipped catalog feeds don't have to be re-encoded. Candidate
-feeds without a precomputed vector are encoded on the fly and cached in-process.
+Shipping precomputed catalog vectors in the wheel is a deferred optimization; at
+this catalog size encoding on first use is cheap.
 """
 
-import json
-from importlib import resources
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from fetchkit.discovery.errors import DiscoveryBackendUnavailable
 from fetchkit.discovery.ranking import feed_document
@@ -23,12 +19,7 @@ from fetchkit.discovery.schemas import FeedMatch
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import numpy as np
 
-_DATA_PACKAGE = "fetchkit.discovery.data"
-_EMBEDDINGS_FILENAME = "embeddings.npy"
-_META_FILENAME = "embeddings_meta.json"
-
-# Small, fast, widely-used default model. Recorded in the artifact meta so the
-# same model is used to embed queries at runtime.
+# Small, fast, widely-used default model.
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 _SCORE_DECIMALS = 6
@@ -55,49 +46,20 @@ def _require_deps() -> None:
         raise DiscoveryBackendUnavailable(_INSTALL_HINT)
 
 
-def _load_precomputed() -> tuple[Optional[dict[str, "np.ndarray"]], Optional[str]]:
-    """Load the shipped embedding artifact, if any.
-
-    Returns a ``(vectors_by_url, model_name)`` pair. Both are ``None`` when no
-    artifact is shipped (the common case — the artifact is opt-in/built on demand).
-    """
-    import numpy as np
-
-    meta_res = resources.files(_DATA_PACKAGE).joinpath(_META_FILENAME)
-    emb_res = resources.files(_DATA_PACKAGE).joinpath(_EMBEDDINGS_FILENAME)
-    if not (meta_res.is_file() and emb_res.is_file()):
-        return None, None
-
-    meta = json.loads(meta_res.read_text(encoding="utf-8"))
-    urls: list[str] = meta["urls"]
-    model_name: str = meta.get("model", DEFAULT_MODEL)
-    with resources.as_file(emb_res) as path:
-        matrix = np.load(path)
-    vectors = {url: matrix[i] for i, url in enumerate(urls)}
-    return vectors, model_name
-
-
 class LocalEmbeddingRanker:
     """Ranks feeds by cosine similarity of local-model embeddings."""
 
-    def __init__(
-        self,
-        model_name: str = DEFAULT_MODEL,
-        vectors_by_url: Optional[dict[str, "np.ndarray"]] = None,
-    ) -> None:
+    def __init__(self, model_name: str = DEFAULT_MODEL) -> None:
         """Build a ranker. Dependencies are checked eagerly so failures are clear."""
         _require_deps()
         self._model_name = model_name
-        self._vectors_by_url = vectors_by_url or {}
         self._cache: dict[str, Any] = {}
         self._model: Any = None
 
     @classmethod
     def from_default(cls) -> "LocalEmbeddingRanker":
-        """Build a ranker, loading the shipped embedding artifact if present."""
-        _require_deps()
-        vectors, model_name = _load_precomputed()
-        return cls(model_name=model_name or DEFAULT_MODEL, vectors_by_url=vectors)
+        """Build a ranker using the default model."""
+        return cls()
 
     def _load_model(self) -> Any:
         if self._model is None:
@@ -127,11 +89,8 @@ class LocalEmbeddingRanker:
         query_vec = self._encode(query)
         scored: list[tuple[float, str, FeedMatch]] = []
         for cand in candidates:
-            vec = self._vectors_by_url.get(cand.url)
-            if vec is None:
-                vec = self._encode(feed_document(cand))
             # Vectors are L2-normalized, so the dot product is cosine similarity.
-            similarity = float(np.dot(query_vec, vec))
+            similarity = float(np.dot(query_vec, self._encode(feed_document(cand))))
             score = round(similarity, _SCORE_DECIMALS)
             scored.append((score, cand.url, cand.model_copy(update={"score": score})))
 
@@ -139,9 +98,4 @@ class LocalEmbeddingRanker:
         return [match for _, _, match in scored]
 
 
-__all__ = [
-    "LocalEmbeddingRanker",
-    "embeddings_available",
-    "DEFAULT_MODEL",
-    "DiscoveryBackendUnavailable",
-]
+__all__ = ["LocalEmbeddingRanker", "embeddings_available", "DEFAULT_MODEL"]

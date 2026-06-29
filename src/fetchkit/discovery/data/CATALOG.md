@@ -37,17 +37,18 @@ is rejected at load time.
 ## Maintaining
 
 - Add or edit entries directly in `catalog.json`, then bump `catalog_version`.
-- Run the validator / index builder:
+- Run the validator:
 
   ```bash
-  python scripts/build_discovery_index.py            # validate only
-  python scripts/build_discovery_index.py --embed     # also (re)build embeddings.npy
+  python scripts/validate_catalog.py
   ```
 
-  It checks the schema, rejects duplicate `id`/`url` and non-http(s) URLs, and
-  (with `--embed`, requires the `discovery-embeddings` extra) regenerates the
-  embedding artifact.
+  It checks the schema and rejects duplicate `id`/`url` and non-http(s) URLs.
 - `tests/discovery/catalog_test.py` enforces these invariants in CI.
+
+The embedding ranker encodes each feed's document at query time (cached
+in-process); shipping precomputed catalog vectors in the wheel is a deferred
+optimization.
 
 This is intentionally a seed set. Expanding coverage (more publishers, languages,
 and niches) is the main way to improve discovery quality over time.

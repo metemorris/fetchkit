@@ -35,7 +35,7 @@ def test_discover_includes_autodiscovered_feeds() -> None:
         name="New AI Lab",
         description="Cutting-edge artificial intelligence and machine learning research.",
     )
-    with patch("fetchkit.discovery.discover.find_feeds", return_value=[candidate]):
+    with patch("fetchkit.discovery.core.find_feeds", return_value=[candidate]):
         matches = discover(
             "artificial intelligence research",
             backend="lexical",
@@ -51,7 +51,7 @@ def test_discover_includes_autodiscovered_feeds() -> None:
 def test_discover_dedups_catalog_over_autodiscovery() -> None:
     # Autodiscovery returns a feed already in the catalog: catalog wins (added first).
     dup = FeedCandidate(url="https://blog.rust-lang.org/feed.xml", name="dup")
-    with patch("fetchkit.discovery.discover.find_feeds", return_value=[dup]):
+    with patch("fetchkit.discovery.core.find_feeds", return_value=[dup]):
         matches = discover(
             "rust",
             backend="lexical",
@@ -71,7 +71,7 @@ def test_discover_includes_external_when_enabled() -> None:
         description="finance and markets news",
     )
     with patch(
-        "fetchkit.discovery.discover.search_feeds_external", return_value=[candidate]
+        "fetchkit.discovery.core.search_feeds_external", return_value=[candidate]
     ):
         matches = discover(
             "finance markets",

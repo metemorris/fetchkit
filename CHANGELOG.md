@@ -28,8 +28,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
   - `fetchkit schema` gains a `discovery` section so agents learn the capability,
     its candidate sources, ranker backends, and catalog version.
   - Top-level lazy exports: `from fetchkit import discover, find_feeds, to_rss_config, FeedMatch`.
-- `scripts/build_discovery_index.py` — offline maintainer tool to validate the
-  catalog and (with `--embed`) build the embedding artifact.
+- `scripts/validate_catalog.py` — offline maintainer tool to validate the catalog.
 
 The core stays at its four runtime dependencies; all discovery extras are optional.
 
