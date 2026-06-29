@@ -4,6 +4,34 @@ All notable changes to fetchkit are documented here.
 This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **RSS feed discovery** (`fetchkit.discovery`, optional subpackage). Maps a
+  natural-language use case onto real RSS feeds an agent can fetch, closing the
+  gap where the `rss` fetcher requires a feed URL the agent must already know.
+  - `discover(query, ...)` ranks candidate feeds and returns `FeedMatch` objects;
+    `to_rss_config(matches)` turns them into a ready-to-run `RSSFetchConfig`.
+  - Candidates come from three sources: a curated, versioned catalog shipped as
+    package data (`discovery/data/catalog.json`); `find_feeds(url)` autodiscovery
+    that reads `<link rel="alternate">` tags and probes common feed paths (the
+    open-web tail — callers supply sites from their own web search); and an opt-in
+    external feed index.
+  - Two ranking backends behind one interface: a pure-Python BM25 ranker (default,
+    no extra dependencies, deterministic) and a local sentence-transformers
+    embedding ranker behind the `discovery-embeddings` extra (`--backend auto`
+    uses it when installed, else falls back to lexical).
+  - CLI: `fetchkit discover "<query>"` (with `--top-k`, `--backend`, `--from-urls`,
+    `--external`, `--min-score`, `--as-config`) and `fetchkit find-feeds <url>`,
+    both emitting pure JSON on stdout. `--as-config` emits a runnable
+    `FetchKitConfig` for `fetchkit run`.
+  - `fetchkit schema` gains a `discovery` section so agents learn the capability,
+    its candidate sources, ranker backends, and catalog version.
+  - Top-level lazy exports: `from fetchkit import discover, find_feeds, to_rss_config, FeedMatch`.
+- `scripts/validate_catalog.py` — offline maintainer tool to validate the catalog.
+
+The core stays at its four runtime dependencies; all discovery extras are optional.
+
 ## [0.1.1] - 2026-06-27
 
 Packaging and tooling release; no library code changes.

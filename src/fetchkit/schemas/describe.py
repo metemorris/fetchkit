@@ -31,7 +31,8 @@ def build_schema_document() -> dict[str, Any]:
           "config":  {<FetchKitConfig JSON Schema>},
           "http":    {<HttpConfig JSON Schema>},
           "fetchers": {"hackernews": {...}, "rss": {...}, ...},
-          "post":    {<Post JSON Schema>}
+          "post":    {<Post JSON Schema>},
+          "discovery": {<RSS feed discovery capability>}
         }
     """
     return {
@@ -43,4 +44,68 @@ def build_schema_document() -> dict[str, Any]:
             for fetcher_type, config_cls in _BUILTIN_TYPES.items()
         },
         "post": Post.model_json_schema(),
+        "discovery": _discovery_section(),
     }
+
+
+def _discovery_section() -> dict[str, Any]:
+    """Describe the RSS feed discovery capability so agents know it exists.
+
+    Discovery lives in an optional subpackage, so this is best-effort: if it can't
+    be imported, a stub explains how to enable it rather than failing ``schema``.
+    """
+    try:
+        from fetchkit.discovery.catalog import load_catalog
+        from fetchkit.discovery.schemas import FeedMatch
+
+        return {
+            "summary": (
+                "Find RSS feeds for a natural-language use case. Feeds are matched, "
+                "not searched: candidates come from a curated catalog, from "
+                "autodiscovery over sites you supply, and (opt-in) an external index, "
+                "then are ranked against the query."
+            ),
+            "feed_match": FeedMatch.model_json_schema(),
+            "candidate_sources": {
+                "catalog": "Curated feed directory shipped with fetchkit; offline, always available.",
+                "autodiscovery": (
+                    "Extract feeds from caller-supplied site URLs (--from-urls / find_feeds). "
+                    "Reaches the open web — you supply the sites from your own web search."
+                ),
+                "external": "Optional third-party feed-index search (--external; needs network).",
+            },
+            "ranker_backends": {
+                "auto": "Embedding ranker if the discovery-embeddings extra is installed, else lexical.",
+                "lexical": "Pure-Python BM25 over feed metadata; deterministic, no extra deps.",
+                "embedding": "Local sentence-transformers model; needs the discovery-embeddings extra.",
+            },
+            "catalog_version": load_catalog().catalog_version,
+            "maps_to_fetcher": "rss",
+            "commands": {
+                "discover": (
+                    'fetchkit discover "<query>" [--top-k N] '
+                    "[--backend auto|lexical|embedding] [--from-urls url1,url2] "
+                    "[--external] [--min-score F] [--as-config]"
+                ),
+                "find_feeds": "fetchkit find-feeds <url> [<url> ...] [--max-feeds N]",
+            },
+            "library": {
+                "discover": (
+                    "fetchkit.discovery.discover(query, *, top_k=5, backend='auto', "
+                    "from_urls=None, use_external=False, min_score=None) -> list[FeedMatch]"
+                ),
+                "find_feeds": (
+                    "fetchkit.discovery.find_feeds(url, *, max_feeds=10) -> list[FeedCandidate]"
+                ),
+                "to_rss_config": (
+                    "fetchkit.discovery.to_rss_config(matches, **rss_kwargs) -> RSSFetchConfig"
+                ),
+            },
+            "note": (
+                "Each match's 'url'/'name' drops into the rss fetcher's 'feeds'. Use "
+                "`discover ... --as-config` (or to_rss_config) to get a runnable config, "
+                "then `fetchkit run`."
+            ),
+        }
+    except Exception as exc:  # pragma: no cover - defensive stub
+        return {"available": False, "error": str(exc)}

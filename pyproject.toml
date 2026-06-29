@@ -42,6 +42,17 @@ dev = [
     "types-PyYAML",
     "types-requests",
 ]
+# RSS feed discovery. The default (lexical) ranker and autodiscovery use only the
+# core dependencies, so this extra is intentionally empty — it documents intent
+# and reserves a place to split discovery into its own distribution later.
+discovery = []
+# Optional local-model semantic ranker for discovery.
+discovery-embeddings = [
+    "numpy>=1.21",
+    "sentence-transformers>=2.2",
+]
+# Optional external feed-index search for discovery (uses the core HTTP client).
+discovery-external = []
 
 [project.scripts]
 fetchkit = "fetchkit.cli:main"
@@ -59,6 +70,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 fetchkit = ["py.typed"]
+"fetchkit.discovery" = ["data/*.json", "data/*.md"]
 
 [tool.pytest.ini_options]
 markers = [

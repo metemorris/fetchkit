@@ -8,11 +8,16 @@ YAML spec and parse structured JSON from stdout::
     fetchkit run config.yaml --fail-on-error # exit 1 if any source failed
     fetchkit validate config.yaml            # check a config without fetching
     fetchkit schema                          # JSON Schema for every config/output model
+    fetchkit discover "AI safety news"       # find RSS feeds for a use case
+    fetchkit find-feeds https://example.com  # autodiscover feeds from a site
 
-stdout carries only JSON (for ``run`` and ``schema``) so it is safe to pipe into
-``jq`` or parse programmatically. Diagnostics and ``--verbose`` logging go to stderr.
-``schema`` lets an agent discover the available fetchers and their options without
-being told the YAML format out of band.
+stdout carries only JSON (for ``run``, ``schema``, ``discover``, and
+``find-feeds``) so it is safe to pipe into ``jq`` or parse programmatically.
+Diagnostics and ``--verbose`` logging go to stderr. ``schema`` lets an agent
+discover the available fetchers and their options without being told the YAML
+format out of band; ``discover`` closes the same gap for RSS by mapping a
+natural-language query onto real feeds (use ``--as-config`` to pipe the result
+straight into ``run``).
 
 Exit codes::
 
@@ -116,6 +121,71 @@ def _cmd_schema(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_discover(args: argparse.Namespace) -> int:
+    """Find RSS feeds for a query and emit JSON (or a ready-to-run RSS config)."""
+    # Imported lazily so the rest of the CLI is unaffected by discovery internals.
+    from fetchkit.discovery import discover, to_rss_config
+    from fetchkit.discovery.catalog import load_catalog
+    from fetchkit.discovery.errors import DiscoveryError
+
+    from_urls: Optional[list[str]] = None
+    if args.from_urls:
+        from_urls = [u.strip() for u in args.from_urls.split(",") if u.strip()]
+
+    try:
+        matches = discover(
+            args.query,
+            top_k=args.top_k,
+            backend=args.backend,
+            from_urls=from_urls,
+            use_external=args.external,
+            min_score=args.min_score,
+        )
+    except DiscoveryError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    indent = None if args.compact else args.indent
+    if args.as_config:
+        # Emit a full FetchKitConfig (a single rss fetcher) that pipes straight
+        # into `run`. Left as just `fetchers` so the time window stays relative
+        # (run resolves the default 24h window at execution time).
+        payload: Any = {"fetchers": [to_rss_config(matches).model_dump(mode="json")]}
+    else:
+        payload = {
+            "query": args.query,
+            "backend": args.backend,
+            "catalog_version": load_catalog().catalog_version,
+            "count": len(matches),
+            "matches": [m.model_dump(mode="json") for m in matches],
+        }
+    _emit_json(payload, indent, args.output)
+    return 0
+
+
+def _cmd_find_feeds(args: argparse.Namespace) -> int:
+    """Autodiscover RSS/Atom feeds from one or more site URLs; emit JSON."""
+    from fetchkit.discovery import find_feeds
+
+    feeds: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for url in args.urls:
+        try:
+            for candidate in find_feeds(url, max_feeds=args.max_feeds):
+                if candidate.url in seen:
+                    continue
+                seen.add(candidate.url)
+                feeds.append(candidate.model_dump(mode="json"))
+        except Exception as exc:
+            errors.append({"url": url, "error": str(exc)})
+
+    indent = None if args.compact else args.indent
+    payload = {"count": len(feeds), "feeds": feeds, "errors": errors}
+    _emit_json(payload, indent, args.output)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the top-level argument parser with ``run`` and ``validate``."""
     parser = argparse.ArgumentParser(
@@ -179,6 +249,72 @@ def build_parser() -> argparse.ArgumentParser:
         help="Emit single-line JSON (overrides --indent).",
     )
     schema.set_defaults(func=_cmd_schema)
+
+    discover = sub.add_parser(
+        "discover",
+        help="Find RSS feeds for a natural-language query (JSON to stdout).",
+    )
+    discover.add_argument(
+        "query", help="Natural-language use case, e.g. 'AI safety research news'.",
+    )
+    discover.add_argument(
+        "--top-k", type=int, default=5, help="Max matches to return (default: 5).",
+    )
+    discover.add_argument(
+        "--backend", choices=["auto", "lexical", "embedding"], default="auto",
+        help="Ranker backend (default: auto; 'embedding' needs the discovery-embeddings extra).",
+    )
+    discover.add_argument(
+        "--from-urls", default=None, metavar="URLS",
+        help="Comma-separated sites to also autodiscover feeds from (e.g. from your web search).",
+    )
+    discover.add_argument(
+        "--external", action="store_true",
+        help="Also query the external feed index (network; opt-in).",
+    )
+    discover.add_argument(
+        "--min-score", type=float, default=None,
+        help="Drop matches scoring below this threshold.",
+    )
+    discover.add_argument(
+        "--as-config", action="store_true",
+        help="Emit a ready-to-run RSSFetchConfig instead of the match list.",
+    )
+    discover.add_argument(
+        "-o", "--output", default=None, metavar="PATH",
+        help="Write JSON to this file instead of stdout.",
+    )
+    discover.add_argument(
+        "--indent", type=int, default=2,
+        help="JSON indentation for pretty output (default: 2).",
+    )
+    discover.add_argument(
+        "--compact", action="store_true",
+        help="Emit single-line JSON (overrides --indent).",
+    )
+    discover.set_defaults(func=_cmd_discover)
+
+    find_feeds = sub.add_parser(
+        "find-feeds",
+        help="Autodiscover RSS/Atom feeds from one or more site URLs.",
+    )
+    find_feeds.add_argument("urls", nargs="+", help="Site URL(s) to discover feeds from.")
+    find_feeds.add_argument(
+        "--max-feeds", type=int, default=10, help="Max feeds per site (default: 10).",
+    )
+    find_feeds.add_argument(
+        "-o", "--output", default=None, metavar="PATH",
+        help="Write JSON to this file instead of stdout.",
+    )
+    find_feeds.add_argument(
+        "--indent", type=int, default=2,
+        help="JSON indentation for pretty output (default: 2).",
+    )
+    find_feeds.add_argument(
+        "--compact", action="store_true",
+        help="Emit single-line JSON (overrides --indent).",
+    )
+    find_feeds.set_defaults(func=_cmd_find_feeds)
 
     return parser
 
