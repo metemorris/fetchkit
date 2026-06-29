@@ -1,0 +1,505 @@
+{
+  "catalog_version": 1,
+  "entries": [
+    {
+      "id": "bbc-news",
+      "url": "https://feeds.bbci.co.uk/news/rss.xml",
+      "name": "BBC News",
+      "description": "Top stories and breaking news from the BBC, covering world events, UK news, politics, and business.",
+      "topics": ["news", "world", "breaking-news", "politics"],
+      "category": "news",
+      "language": "en",
+      "homepage": "https://www.bbc.com/news"
+    },
+    {
+      "id": "npr-news",
+      "url": "https://feeds.npr.org/1001/rss.xml",
+      "name": "NPR News",
+      "description": "National and world news headlines from National Public Radio, with reporting on politics, society, and culture.",
+      "topics": ["news", "world", "politics", "society"],
+      "category": "news",
+      "language": "en",
+      "homepage": "https://www.npr.org"
+    },
+    {
+      "id": "guardian-world",
+      "url": "https://www.theguardian.com/world/rss",
+      "name": "The Guardian — World",
+      "description": "International news and analysis from The Guardian, covering global affairs, conflict, and human rights.",
+      "topics": ["news", "world", "international", "analysis"],
+      "category": "news",
+      "language": "en",
+      "homepage": "https://www.theguardian.com/world"
+    },
+    {
+      "id": "aljazeera-all",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "name": "Al Jazeera",
+      "description": "Global news from Al Jazeera with a focus on the Middle East, Africa, and the Global South.",
+      "topics": ["news", "world", "middle-east", "international"],
+      "category": "news",
+      "language": "en",
+      "homepage": "https://www.aljazeera.com"
+    },
+    {
+      "id": "nyt-homepage",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+      "name": "The New York Times — Home",
+      "description": "Front-page stories from The New York Times spanning US and world news, politics, and opinion.",
+      "topics": ["news", "world", "us", "politics"],
+      "category": "news",
+      "language": "en",
+      "homepage": "https://www.nytimes.com"
+    },
+    {
+      "id": "ars-technica",
+      "url": "https://feeds.arstechnica.com/arstechnica/index",
+      "name": "Ars Technica",
+      "description": "In-depth technology news and analysis covering computing, science, policy, gadgets, and gaming.",
+      "topics": ["technology", "computing", "science", "gadgets"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://arstechnica.com"
+    },
+    {
+      "id": "the-verge",
+      "url": "https://www.theverge.com/rss/index.xml",
+      "name": "The Verge",
+      "description": "Technology, science, art, and culture news with reviews of consumer gadgets and coverage of the tech industry.",
+      "topics": ["technology", "gadgets", "consumer-electronics", "culture"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://www.theverge.com"
+    },
+    {
+      "id": "wired",
+      "url": "https://www.wired.com/feed/rss",
+      "name": "WIRED",
+      "description": "Reporting on how emerging technology shapes culture, the economy, science, and politics.",
+      "topics": ["technology", "science", "culture", "business"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://www.wired.com"
+    },
+    {
+      "id": "techcrunch",
+      "url": "https://techcrunch.com/feed/",
+      "name": "TechCrunch",
+      "description": "Startup and technology industry news, funding rounds, venture capital, and product launches.",
+      "topics": ["technology", "startups", "venture-capital", "business"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://techcrunch.com"
+    },
+    {
+      "id": "mit-tech-review",
+      "url": "https://www.technologyreview.com/feed/",
+      "name": "MIT Technology Review",
+      "description": "Analysis of emerging technologies — AI, biotech, climate, and computing — and their impact on society.",
+      "topics": ["technology", "ai", "science", "research"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://www.technologyreview.com"
+    },
+    {
+      "id": "hn-frontpage",
+      "url": "https://hnrss.org/frontpage",
+      "name": "Hacker News — Front Page",
+      "description": "Front-page links from Hacker News: programming, startups, technology, and computer science discussion.",
+      "topics": ["technology", "programming", "startups", "computer-science"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://news.ycombinator.com"
+    },
+    {
+      "id": "lobsters",
+      "url": "https://lobste.rs/rss",
+      "name": "Lobsters",
+      "description": "Computing-focused community link aggregator covering programming, security, and software engineering.",
+      "topics": ["programming", "computing", "software-engineering", "security"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://lobste.rs"
+    },
+    {
+      "id": "github-blog",
+      "url": "https://github.blog/feed/",
+      "name": "The GitHub Blog",
+      "description": "Product updates, engineering posts, and developer news from GitHub.",
+      "topics": ["programming", "developer-tools", "open-source", "git"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://github.blog"
+    },
+    {
+      "id": "stackoverflow-blog",
+      "url": "https://stackoverflow.blog/feed/",
+      "name": "Stack Overflow Blog",
+      "description": "Essays and interviews on software development, developer culture, and engineering practice.",
+      "topics": ["programming", "software-engineering", "developer-culture"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://stackoverflow.blog"
+    },
+    {
+      "id": "martin-fowler",
+      "url": "https://martinfowler.com/feed.atom",
+      "name": "Martin Fowler",
+      "description": "Writing on software design, architecture, refactoring, and agile development practices.",
+      "topics": ["programming", "software-architecture", "design", "agile"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://martinfowler.com"
+    },
+    {
+      "id": "real-python",
+      "url": "https://realpython.com/atom.xml",
+      "name": "Real Python",
+      "description": "Tutorials and articles for learning Python programming, from basics to advanced techniques.",
+      "topics": ["python", "programming", "tutorials"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://realpython.com"
+    },
+    {
+      "id": "python-insider",
+      "url": "https://blog.python.org/feeds/posts/default",
+      "name": "Python Insider",
+      "description": "Official news from the Python core development team, including release announcements.",
+      "topics": ["python", "programming", "releases"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://blog.python.org"
+    },
+    {
+      "id": "rust-blog",
+      "url": "https://blog.rust-lang.org/feed.xml",
+      "name": "Rust Blog",
+      "description": "Official announcements from the Rust programming language team, including releases and roadmap updates.",
+      "topics": ["rust", "programming", "systems-programming", "releases"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://blog.rust-lang.org"
+    },
+    {
+      "id": "this-week-in-rust",
+      "url": "https://this-week-in-rust.org/atom.xml",
+      "name": "This Week in Rust",
+      "description": "Weekly roundup of news, blog posts, crates, and community updates from the Rust ecosystem.",
+      "topics": ["rust", "programming", "systems-programming", "newsletter"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://this-week-in-rust.org"
+    },
+    {
+      "id": "go-blog",
+      "url": "https://go.dev/blog/feed.atom",
+      "name": "The Go Blog",
+      "description": "Official blog of the Go programming language with release notes, design articles, and tutorials.",
+      "topics": ["go", "golang", "programming", "systems-programming"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://go.dev/blog"
+    },
+    {
+      "id": "css-tricks",
+      "url": "https://css-tricks.com/feed/",
+      "name": "CSS-Tricks",
+      "description": "Front-end web development articles on CSS, JavaScript, HTML, and modern browser techniques.",
+      "topics": ["web-development", "css", "javascript", "frontend"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://css-tricks.com"
+    },
+    {
+      "id": "smashing-magazine",
+      "url": "https://www.smashingmagazine.com/feed/",
+      "name": "Smashing Magazine",
+      "description": "Articles on web design, front-end development, UX, accessibility, and performance.",
+      "topics": ["web-development", "design", "ux", "frontend"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://www.smashingmagazine.com"
+    },
+    {
+      "id": "arxiv-cs-ai",
+      "url": "http://export.arxiv.org/rss/cs.AI",
+      "name": "arXiv cs.AI",
+      "description": "Latest preprints in Artificial Intelligence from arXiv: reasoning, planning, knowledge representation, and agents.",
+      "topics": ["ai", "artificial-intelligence", "research", "machine-learning"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://arxiv.org/list/cs.AI/recent"
+    },
+    {
+      "id": "arxiv-cs-lg",
+      "url": "http://export.arxiv.org/rss/cs.LG",
+      "name": "arXiv cs.LG",
+      "description": "Latest preprints in Machine Learning from arXiv: deep learning, neural networks, optimization, and learning theory.",
+      "topics": ["machine-learning", "deep-learning", "research", "ai"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://arxiv.org/list/cs.LG/recent"
+    },
+    {
+      "id": "arxiv-cs-cl",
+      "url": "http://export.arxiv.org/rss/cs.CL",
+      "name": "arXiv cs.CL",
+      "description": "Latest preprints in Computation and Language from arXiv: natural language processing, large language models, and linguistics.",
+      "topics": ["nlp", "natural-language-processing", "llm", "research", "ai"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://arxiv.org/list/cs.CL/recent"
+    },
+    {
+      "id": "arxiv-stat-ml",
+      "url": "http://export.arxiv.org/rss/stat.ML",
+      "name": "arXiv stat.ML",
+      "description": "Latest preprints in Machine Learning (Statistics) from arXiv: statistical learning, probabilistic models, and inference.",
+      "topics": ["machine-learning", "statistics", "research", "probabilistic-models"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://arxiv.org/list/stat.ML/recent"
+    },
+    {
+      "id": "huggingface-blog",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "name": "Hugging Face Blog",
+      "description": "Posts on open-source machine learning, transformers, large language models, and the ML community.",
+      "topics": ["machine-learning", "llm", "open-source", "ai", "nlp"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://huggingface.co/blog"
+    },
+    {
+      "id": "bair-blog",
+      "url": "https://bair.berkeley.edu/blog/feed.xml",
+      "name": "Berkeley AI Research (BAIR) Blog",
+      "description": "Research highlights from Berkeley AI Research on machine learning, robotics, computer vision, and reinforcement learning.",
+      "topics": ["ai", "machine-learning", "research", "robotics", "reinforcement-learning"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://bair.berkeley.edu/blog/"
+    },
+    {
+      "id": "the-gradient",
+      "url": "https://thegradient.pub/rss/",
+      "name": "The Gradient",
+      "description": "Essays and perspectives on artificial intelligence research, its history, and its societal implications.",
+      "topics": ["ai", "machine-learning", "research", "ai-safety"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://thegradient.pub"
+    },
+    {
+      "id": "nature",
+      "url": "https://www.nature.com/nature.rss",
+      "name": "Nature",
+      "description": "Research and news from Nature across the physical, life, and earth sciences.",
+      "topics": ["science", "research", "biology", "physics"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://www.nature.com"
+    },
+    {
+      "id": "science-news",
+      "url": "https://www.science.org/rss/news_current.xml",
+      "name": "Science Magazine — News",
+      "description": "News from the journal Science covering breakthroughs and policy across all scientific disciplines.",
+      "topics": ["science", "research", "policy"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://www.science.org/news"
+    },
+    {
+      "id": "quanta-magazine",
+      "url": "https://www.quantamagazine.org/feed/",
+      "name": "Quanta Magazine",
+      "description": "In-depth journalism on developments in mathematics, physics, biology, and computer science.",
+      "topics": ["science", "mathematics", "physics", "computer-science"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://www.quantamagazine.org"
+    },
+    {
+      "id": "scientific-american",
+      "url": "http://rss.sciam.com/ScientificAmerican-Global",
+      "name": "Scientific American",
+      "description": "Science news and explanatory journalism across health, technology, environment, and physics.",
+      "topics": ["science", "health", "environment", "technology"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://www.scientificamerican.com"
+    },
+    {
+      "id": "phys-org",
+      "url": "https://phys.org/rss-feed/",
+      "name": "Phys.org",
+      "description": "Daily science and technology research news across physics, space, chemistry, and biology.",
+      "topics": ["science", "physics", "space", "research"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://phys.org"
+    },
+    {
+      "id": "nasa-news",
+      "url": "https://www.nasa.gov/feed/",
+      "name": "NASA",
+      "description": "News and updates from NASA on space exploration, missions, astronomy, and earth science.",
+      "topics": ["space", "astronomy", "science", "nasa"],
+      "category": "science",
+      "language": "en",
+      "homepage": "https://www.nasa.gov"
+    },
+    {
+      "id": "krebs-on-security",
+      "url": "https://krebsonsecurity.com/feed/",
+      "name": "Krebs on Security",
+      "description": "Investigative reporting on cybercrime, data breaches, and computer security by Brian Krebs.",
+      "topics": ["security", "cybersecurity", "cybercrime", "data-breaches"],
+      "category": "security",
+      "language": "en",
+      "homepage": "https://krebsonsecurity.com"
+    },
+    {
+      "id": "schneier-on-security",
+      "url": "https://www.schneier.com/feed/atom/",
+      "name": "Schneier on Security",
+      "description": "Commentary on security, cryptography, privacy, and technology policy by Bruce Schneier.",
+      "topics": ["security", "cryptography", "privacy", "policy"],
+      "category": "security",
+      "language": "en",
+      "homepage": "https://www.schneier.com"
+    },
+    {
+      "id": "the-hacker-news",
+      "url": "https://feeds.feedburner.com/TheHackersNews",
+      "name": "The Hacker News",
+      "description": "Cybersecurity news on vulnerabilities, malware, breaches, and threat intelligence.",
+      "topics": ["security", "cybersecurity", "vulnerabilities", "malware"],
+      "category": "security",
+      "language": "en",
+      "homepage": "https://thehackernews.com"
+    },
+    {
+      "id": "fed-press-all",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "name": "U.S. Federal Reserve — All Press Releases",
+      "description": "Official press releases from the U.S. Federal Reserve, including monetary policy and banking regulation.",
+      "topics": ["finance", "monetary-policy", "central-bank", "economics"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://www.federalreserve.gov"
+    },
+    {
+      "id": "fed-press-monetary",
+      "url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
+      "name": "U.S. Federal Reserve — Monetary Policy",
+      "description": "Federal Reserve press releases specific to monetary policy, including FOMC statements and interest-rate decisions.",
+      "topics": ["finance", "monetary-policy", "central-bank", "interest-rates"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://www.federalreserve.gov/monetarypolicy.htm"
+    },
+    {
+      "id": "bank-of-england",
+      "url": "https://www.bankofengland.co.uk/rss/news",
+      "name": "Bank of England — News",
+      "description": "News and announcements from the Bank of England on monetary policy, financial stability, and banknotes.",
+      "topics": ["finance", "monetary-policy", "central-bank", "uk"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://www.bankofengland.co.uk"
+    },
+    {
+      "id": "economist-finance",
+      "url": "https://www.economist.com/finance-and-economics/rss.xml",
+      "name": "The Economist — Finance & Economics",
+      "description": "Analysis of global finance and economics from The Economist, covering markets, policy, and trade.",
+      "topics": ["finance", "economics", "markets", "global-economy"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://www.economist.com/finance-and-economics"
+    },
+    {
+      "id": "marginal-revolution",
+      "url": "https://marginalrevolution.com/feed",
+      "name": "Marginal Revolution",
+      "description": "Daily economics commentary and links from Tyler Cowen and Alex Tabarrok on markets, policy, and culture.",
+      "topics": ["economics", "finance", "policy", "markets"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://marginalrevolution.com"
+    },
+    {
+      "id": "engadget",
+      "url": "https://www.engadget.com/rss.xml",
+      "name": "Engadget",
+      "description": "Consumer technology news and reviews covering gadgets, gaming, mobile, and entertainment.",
+      "topics": ["technology", "gadgets", "consumer-electronics", "gaming"],
+      "category": "technology",
+      "language": "en",
+      "homepage": "https://www.engadget.com"
+    },
+    {
+      "id": "openai-blog",
+      "url": "https://openai.com/blog/rss.xml",
+      "name": "OpenAI Blog",
+      "description": "Announcements and research updates from OpenAI on large language models, safety, and products.",
+      "topics": ["ai", "llm", "research", "ai-safety"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://openai.com/blog"
+    },
+    {
+      "id": "google-research-blog",
+      "url": "https://research.google/blog/rss/",
+      "name": "Google Research Blog",
+      "description": "Research from Google across machine learning, systems, algorithms, health, and quantum computing.",
+      "topics": ["ai", "machine-learning", "research", "systems"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://research.google/blog/"
+    },
+    {
+      "id": "deepmind-blog",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "name": "Google DeepMind Blog",
+      "description": "Research and announcements from Google DeepMind on artificial intelligence, reinforcement learning, and science.",
+      "topics": ["ai", "machine-learning", "research", "reinforcement-learning"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://deepmind.google/discover/blog/"
+    },
+    {
+      "id": "nature-machine-intelligence",
+      "url": "https://www.nature.com/natmachintell.rss",
+      "name": "Nature Machine Intelligence",
+      "description": "Peer-reviewed research on machine learning, AI, and robotics published in Nature Machine Intelligence.",
+      "topics": ["ai", "machine-learning", "research", "robotics"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://www.nature.com/natmachintell/"
+    },
+    {
+      "id": "espn-top",
+      "url": "https://www.espn.com/espn/rss/news",
+      "name": "ESPN — Top Headlines",
+      "description": "Top sports headlines from ESPN covering football, basketball, baseball, soccer, and more.",
+      "topics": ["sports", "football", "basketball", "soccer"],
+      "category": "sports",
+      "language": "en",
+      "homepage": "https://www.espn.com"
+    },
+    {
+      "id": "variety",
+      "url": "https://variety.com/feed/",
+      "name": "Variety",
+      "description": "Entertainment industry news covering film, television, music, and the business of Hollywood.",
+      "topics": ["entertainment", "film", "television", "music"],
+      "category": "entertainment",
+      "language": "en",
+      "homepage": "https://variety.com"
+    }
+  ]
+}

@@ -31,7 +31,8 @@ def build_schema_document() -> dict[str, Any]:
           "config":  {<FetchKitConfig JSON Schema>},
           "http":    {<HttpConfig JSON Schema>},
           "fetchers": {"hackernews": {...}, "rss": {...}, ...},
-          "post":    {<Post JSON Schema>}
+          "post":    {<Post JSON Schema>},
+          "discovery": {<RSS feed discovery capability>}
         }
     """
     return {
@@ -43,4 +44,31 @@ def build_schema_document() -> dict[str, Any]:
             for fetcher_type, config_cls in _BUILTIN_TYPES.items()
         },
         "post": Post.model_json_schema(),
+        "discovery": _discovery_section(),
     }
+
+
+def _discovery_section() -> dict[str, Any]:
+    """Describe the RSS feed discovery capability so agents know it exists.
+
+    Discovery lives in an optional subpackage, so this is best-effort: if it can't
+    be imported, a stub explains how to enable it rather than failing ``schema``.
+    """
+    try:
+        from fetchkit.discovery.catalog import load_catalog
+        from fetchkit.discovery.schemas import FeedMatch
+
+        return {
+            "feed_match": FeedMatch.model_json_schema(),
+            "candidate_sources": ["catalog", "autodiscovery", "external"],
+            "ranker_backends": ["auto", "lexical", "embedding"],
+            "catalog_version": load_catalog().catalog_version,
+            "maps_to_fetcher": "rss",
+            "note": (
+                "discover(query) returns ranked feeds; their 'url'/'name' drop into the "
+                "rss fetcher's 'feeds'. CLI: `fetchkit discover \"<query>\"` "
+                "(add --as-config to emit a ready-to-run rss config)."
+            ),
+        }
+    except Exception as exc:  # pragma: no cover - defensive stub
+        return {"available": False, "error": str(exc)}

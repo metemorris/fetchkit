@@ -8,7 +8,19 @@ from fetchkit.schemas.fetcher import _BUILTIN_TYPES
 def test_document_has_top_level_sections() -> None:
     doc = build_schema_document()
     assert doc["version"] == __version__
-    assert set(doc) == {"version", "config", "http", "fetchers", "post"}
+    assert set(doc) == {"version", "config", "http", "fetchers", "post", "discovery"}
+
+
+def test_discovery_section_describes_capability() -> None:
+    doc = build_schema_document()
+    discovery = doc["discovery"]
+    assert discovery["maps_to_fetcher"] == "rss"
+    assert set(discovery["candidate_sources"]) == {"catalog", "autodiscovery", "external"}
+    assert "auto" in discovery["ranker_backends"]
+    assert isinstance(discovery["catalog_version"], int)
+    # The FeedMatch schema is embedded so agents learn the result shape.
+    assert discovery["feed_match"]["type"] == "object"
+    assert "url" in discovery["feed_match"]["properties"]
 
 
 def test_all_builtin_fetchers_are_described() -> None:

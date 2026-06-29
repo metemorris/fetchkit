@@ -1,0 +1,65 @@
+{
+  "catalog_version": 7,
+  "entries": [
+    {
+      "id": "rust-blog",
+      "url": "https://blog.rust-lang.org/feed.xml",
+      "name": "Rust Blog",
+      "description": "Official news about the Rust programming language, systems programming, memory safety, and releases.",
+      "topics": ["rust", "programming", "systems-programming"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://blog.rust-lang.org"
+    },
+    {
+      "id": "real-python",
+      "url": "https://realpython.com/atom.xml",
+      "name": "Real Python",
+      "description": "Tutorials for learning the Python programming language, from beginner basics to advanced topics.",
+      "topics": ["python", "programming", "tutorials"],
+      "category": "programming",
+      "language": "en",
+      "homepage": "https://realpython.com"
+    },
+    {
+      "id": "arxiv-cs-ai",
+      "url": "http://export.arxiv.org/rss/cs.AI",
+      "name": "arXiv cs.AI",
+      "description": "Latest research preprints in artificial intelligence, machine learning, and autonomous agents.",
+      "topics": ["ai", "artificial-intelligence", "machine-learning", "research"],
+      "category": "research",
+      "language": "en",
+      "homepage": "https://arxiv.org/list/cs.AI/recent"
+    },
+    {
+      "id": "fed-monetary",
+      "url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
+      "name": "Federal Reserve Monetary Policy",
+      "description": "Central bank press releases on monetary policy, interest rates, and the economy.",
+      "topics": ["finance", "monetary-policy", "central-bank", "economics"],
+      "category": "finance",
+      "language": "en",
+      "homepage": "https://www.federalreserve.gov"
+    },
+    {
+      "id": "serious-eats",
+      "url": "https://www.seriouseats.com/feed.xml",
+      "name": "Serious Eats",
+      "description": "Recipes, cooking techniques, and food science for home cooks.",
+      "topics": ["food", "cooking", "recipes"],
+      "category": "food",
+      "language": "en",
+      "homepage": "https://www.seriouseats.com"
+    },
+    {
+      "id": "espn-soccer",
+      "url": "https://www.espn.com/espn/rss/soccer/news",
+      "name": "ESPN Soccer",
+      "description": "Soccer news, match reports, and transfer rumors from around the world of football.",
+      "topics": ["sports", "soccer", "football"],
+      "category": "sports",
+      "language": "en",
+      "homepage": "https://www.espn.com/soccer/"
+    }
+  ]
+}

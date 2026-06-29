@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Example Feed</title>
+    <link>https://example.com</link>
+    <description>Example feed about technology and programming.</description>
+    <language>en</language>
+    <item>
+      <title>First post about Rust</title>
+      <link>https://example.com/posts/1</link>
+      <guid>https://example.com/posts/1</guid>
+      <pubDate>Mon, 29 Jun 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Second post about Python</title>
+      <link>https://example.com/posts/2</link>
+      <guid>https://example.com/posts/2</guid>
+      <pubDate>Mon, 29 Jun 2026 13:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -29,6 +29,8 @@ back clean typed data.
   `(created_at, id)`.
 - **Agent-friendly CLI**: `fetchkit run config.yaml` emits clean JSON on stdout —
   no Python required.
+- **RSS feed discovery**: `fetchkit discover "<use case>"` maps a natural-language
+  query onto real RSS feeds an agent can fetch — closing the "which feed URL?" gap.
 
 ## Install
 
@@ -147,6 +149,69 @@ config = FetchKitConfig(
 )
 result = collect_all(config)
 ```
+
+## Discovering RSS feeds
+
+Every other source has a finite, nameable set of options (`fetchkit schema`
+enumerates them). RSS is the exception: a feed is an *arbitrary URL*, so an agent
+that wants "central-bank policy" or "rust programming" has no way to know which
+feeds exist. The optional `discovery` module closes that gap — give it a
+use case, get back ranked feeds you can drop straight into an `rss` fetcher.
+
+```python
+from fetchkit.discovery import discover, to_rss_config
+
+matches = discover("news and topics regarding AI safety research", top_k=5)
+for m in matches:
+    print(m.score, m.name, m.url)
+
+config = to_rss_config(matches)   # an RSSFetchConfig, ready for collect_all
+```
+
+```bash
+fetchkit discover "AI safety research news" --top-k 5            # ranked feeds as JSON
+fetchkit discover "central bank policy" --as-config -o rss.json  # emit a runnable config…
+fetchkit run rss.json                                            # …then fetch (discover → config → run)
+fetchkit find-feeds https://example.com                          # autodiscover a site's feeds
+```
+
+### How it works (and what it can't do)
+
+Feeds are **matched, not searched**. You can't embed feeds you've never seen, so
+embeddings only ever *rank* a set of candidates you already hold. Discovery
+assembles that candidate set from three sources, then ranks it against your query:
+
+1. **Curated catalog** — a shipped, versioned directory of ~50 high-quality,
+   long-lived feeds across news, research, programming, finance, and more. The
+   offline, deterministic floor.
+2. **Autodiscovery** (`find_feeds(url)` / `--from-urls`) — given a site, it reads
+   the `<link rel="alternate">` RSS-autodiscovery tags, probes common feed paths,
+   and validates each candidate. This reaches the open-web long tail. The
+   *topic → which sites* step is left to **your** web search: an agent already has
+   one, so it finds the sites and hands them to fetchkit, which extracts the feeds.
+   fetchkit never bundles a search engine.
+3. **External index** (`--external`, opt-in) — queries a third-party feed-search
+   service for recall over millions of feeds. Off by default (network + ToS).
+
+Ranking has two backends behind one interface:
+
+- **lexical** (default) — pure-Python BM25 over each feed's metadata. Zero extra
+  dependencies, fully deterministic, works offline and in CI.
+- **embedding** — a local sentence-transformers model for stronger semantic
+  matching. Opt in with the extra:
+
+  ```bash
+  pip install "fetchkit-agents[discovery-embeddings]"
+  fetchkit discover "papers on diffusion models" --backend embedding
+  ```
+
+  `--backend auto` (the default) uses the embedding ranker when the extra is
+  installed and falls back to lexical otherwise.
+
+Discovery matches a feed's **description/metadata** (what the feed is *about*),
+not the live article stream — for the latter, fetch the feed with the `rss`
+fetcher and match individual posts. Catalog quality is the main lever on result
+quality; see `src/fetchkit/discovery/data/CATALOG.md` to extend it.
 
 ## Configuration reference
 
