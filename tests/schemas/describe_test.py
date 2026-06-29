@@ -8,7 +8,9 @@ from fetchkit.schemas.fetcher import _BUILTIN_TYPES
 def test_document_has_top_level_sections() -> None:
     doc = build_schema_document()
     assert doc["version"] == __version__
-    assert set(doc) == {"version", "config", "http", "fetchers", "post", "discovery"}
+    assert set(doc) == {
+        "version", "config", "http", "fetchers", "post", "discovery", "suggest",
+    }
 
 
 def test_discovery_section_describes_capability() -> None:
@@ -21,6 +23,17 @@ def test_discovery_section_describes_capability() -> None:
     # The FeedMatch schema is embedded so agents learn the result shape.
     assert discovery["feed_match"]["type"] == "object"
     assert "url" in discovery["feed_match"]["properties"]
+
+
+def test_suggest_section_describes_every_source() -> None:
+    from fetchkit.fetchers import list_suggesters
+
+    doc = build_schema_document()
+    suggest = doc["suggest"]
+    # Every registered suggester is described — the schema can't silently omit one.
+    assert set(suggest["sources"]) == set(list_suggesters())
+    assert "fetchkit suggest" in suggest["command"]
+    assert all(suggest["sources"].values())  # no empty descriptions
 
 
 def test_all_builtin_fetchers_are_described() -> None:

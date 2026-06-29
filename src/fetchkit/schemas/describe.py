@@ -27,12 +27,13 @@ def build_schema_document() -> dict[str, Any]:
     The document has the shape::
 
         {
-          "version": "0.1.1",
+          "version": "<package version>",
           "config":  {<FetchKitConfig JSON Schema>},
           "http":    {<HttpConfig JSON Schema>},
           "fetchers": {"hackernews": {...}, "rss": {...}, ...},
           "post":    {<Post JSON Schema>},
-          "discovery": {<RSS feed discovery capability>}
+          "discovery": {<RSS feed discovery capability>},
+          "suggest":  {<per-source config-discovery capability>}
         }
     """
     return {
@@ -45,6 +46,7 @@ def build_schema_document() -> dict[str, Any]:
         },
         "post": Post.model_json_schema(),
         "discovery": _discovery_section(),
+        "suggest": _suggest_section(),
     }
 
 
@@ -109,3 +111,49 @@ def _discovery_section() -> dict[str, Any]:
         }
     except Exception as exc:  # pragma: no cover - defensive stub
         return {"available": False, "error": str(exc)}
+
+
+# What each source's suggester returns and which config field the rows fill. Keyed
+# by source so the section stays in lockstep with the suggester registry: every
+# registered source is described, and an unmapped source still appears (with a
+# generic note) so the schema can never silently omit a capability.
+_SUGGEST_DETAILS: dict[str, str] = {
+    "hackernews": "Selectable sort orders (static — HN has no tags) → posts.order.",
+    "rss": "Ranked feeds for a use case (delegates to discover; needs --query) → feeds.",
+    "arxiv": "Category codes + names (static taxonomy; filter with --query) → categories.",
+    "github": "Popular owner/name repos for a query (--query) → repos.",
+    "lobsters": "All tags from /tags.json → tag.",
+    "stackexchange": "Popular tags, or sites with --what sites (--site) → tagged / site.",
+    "bluesky": "Popular feeds, or actors with --what actors (--query) → actor.",
+    "mastodon": "Trending hashtags on --instance → tag / instance.",
+}
+
+
+def _suggest_section() -> dict[str, Any]:
+    """Describe the per-source ``suggest`` capability so agents know it exists.
+
+    ``discover`` solves RSS's "which feed URL?" problem; ``suggest`` is its
+    cross-source analog — "which tag / site / instance / feed / category goes in the
+    config?" The list of sources is read from the live suggester registry, so new
+    suggesters appear here for free.
+    """
+    from fetchkit.fetchers import list_suggesters
+
+    return {
+        "summary": (
+            "List the selectable knobs for a source (tags, sites, categories, "
+            "feeds, actors) so a config field can be filled without guessing. The "
+            "cross-source analog of discovery, which is RSS-only. All suggesters are "
+            "no-auth; most call the source's live API, while hackernews/arxiv are "
+            "static and rss reuses the offline catalog ranker."
+        ),
+        "command": (
+            "fetchkit suggest <source> [--query Q] [--site SITE] [--instance HOST] "
+            "[--what SUB] [--limit N]"
+        ),
+        "library": "fetchkit.run_suggester(source, **params) -> list[dict]",
+        "sources": {
+            source: _SUGGEST_DETAILS.get(source, "Source-specific selectable knobs.")
+            for source in list_suggesters()
+        },
+    }
