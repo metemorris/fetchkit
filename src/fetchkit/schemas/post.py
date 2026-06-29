@@ -24,6 +24,9 @@ class Source(str, Enum):
     ARXIV = "arxiv"
     GITHUB = "github"
     LOBSTERS = "lobsters"
+    STACKEXCHANGE = "stackexchange"
+    BLUESKY = "bluesky"
+    MASTODON = "mastodon"
 
 
 class Comment(FetchkitBaseModel):

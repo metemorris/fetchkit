@@ -7,5 +7,8 @@ from . import rss
 from . import arxiv
 from . import github
 from . import lobsters
+from . import stackexchange
+from . import bluesky
+from . import mastodon
 
 __all__ = ["get_fetcher", "register_fetcher"]

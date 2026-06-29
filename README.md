@@ -8,15 +8,16 @@
 A YAML-configured data-fetching library for agentic applications.
 
 `fetchkit` collects posts and comments from sources (Hacker News, RSS/Atom, arXiv,
-GitHub, Lobsters) into a single canonical `Post` model, with de-duplication,
+GitHub, Lobsters, Stack Exchange, Bluesky, Mastodon) into a single canonical `Post`
+model, with de-duplication,
 deterministic sorting, and a shared HTTP client with retries and rate limiting. It is
 designed as the data-collection layer for LLM/agent pipelines — feed it configs, get
 back clean typed data.
 
 - **YAML-first** configuration with strict validation: unknown or misspelled keys
   are rejected up front, so a bad config fails loudly instead of silently.
-- **Builtin fetchers**: Hacker News, RSS/Atom, arXiv, GitHub, and Lobsters — all
-  zero-auth.
+- **Builtin fetchers**: Hacker News, RSS/Atom, arXiv, GitHub, Lobsters, Stack Exchange,
+  Bluesky, and Mastodon — all zero-auth.
 - **Relative time windows**: say `window: "last 6 hours"` instead of computing
   timestamps.
 - **Open `metadata`**: each `Post` carries a `metadata` dict for source-specific
@@ -65,6 +66,15 @@ fetchers:
     repos: ["python/cpython", "pydantic/pydantic"]
   - type: lobsters
     listing: hottest
+  - type: stackexchange
+    site: stackoverflow
+    tagged: ["python", "asyncio"]
+  - type: bluesky
+    resource: search
+    query: "large language models"
+  - type: mastodon
+    instance: mastodon.social
+    tag: ai
   - type: rss
     feeds:
       - url: "https://feeds.bbci.co.uk/news/rss.xml"
@@ -117,7 +127,7 @@ settings, every builtin fetcher's typed config, and the canonical `Post` output 
 so a config can be written without knowing the YAML format out of band:
 
 ```bash
-fetchkit schema | jq '.fetchers | keys'     # ["arxiv","github","hackernews","lobsters","rss"]
+fetchkit schema | jq '.fetchers | keys'     # ["arxiv","bluesky","github","hackernews","lobsters","mastodon","rss","stackexchange"]
 fetchkit schema -o schema.json              # write to a file; supports --compact too
 ```
 
@@ -310,6 +320,47 @@ The lobste.rs public JSON endpoints (no auth). Tags are preserved in `post.metad
 | `tag`      | null    | Restrict to a single tag (uses `/t/<tag>.json`) |
 | `max_items`| 50      | 1–200                                           |
 
+### Stack Exchange (`type: stackexchange`)
+
+The Stack Exchange API (no auth; anonymous access is capped at 300 requests/day/IP).
+Questions become `Post`s; with `comments.fetch: true`, top answers are attached as
+`Comment`s. Tags, answer count, and the accepted-answer id are kept in `post.metadata`.
+
+| Field      | Default        | Notes                                                       |
+|------------|----------------|-------------------------------------------------------------|
+| `site`     | stackoverflow  | API site, e.g. `serverfault`, `superuser`, `askubuntu`      |
+| `tagged`   | `[]`           | Questions carrying ALL of these tags (joined with `;`)      |
+| `query`    | null           | Free-text search (uses `/search/advanced`)                  |
+| `posts`    | —              | `max_items` (1–500) and `order` (`top`→votes, `new`→creation) |
+| `comments` | —              | `fetch`/`max_items` — answers attached as comments          |
+
+### Bluesky (`type: bluesky`)
+
+The public Bluesky AppView (`public.api.bsky.app`), unauthenticated by design.
+`uri`, `cid`, and `langs` are kept in `post.metadata`; likes map to `score` and
+replies to `comment_count`.
+
+| Field      | Default | Notes                                                        |
+|------------|---------|--------------------------------------------------------------|
+| `resource` | search  | `search` (full-text) or `author_feed`                        |
+| `query`    | null    | Search query — required for `resource: search`               |
+| `actor`    | null    | Handle/DID — required for `resource: author_feed`            |
+| `max_items`| 50      | 1–500 (paginated, 100/page)                                  |
+
+### Mastodon (`type: mastodon`)
+
+Public and hashtag timelines on any instance (no auth, when the instance keeps
+public preview enabled — otherwise requests return 401). HTML content is reduced to
+plain text; tags, instance, and visibility are kept in `post.metadata`.
+
+| Field      | Default          | Notes                                                  |
+|------------|------------------|--------------------------------------------------------|
+| `instance` | mastodon.social  | Instance host without scheme, e.g. `fosstodon.org`     |
+| `resource` | tag              | `tag` (`/timelines/tag/<tag>`) or `public`             |
+| `tag`      | null             | Hashtag without `#` — required for `resource: tag`     |
+| `local`    | false            | Restrict to statuses originating on this instance      |
+| `max_items`| 50               | 1–200 (paginated, 40/page)                             |
+
 ### HTTP (`http:`)
 
 | Field                 | Default                  | Notes                                              |
@@ -352,6 +403,7 @@ columns.
 class Post(BaseModel):
     id: str                       # unique within source
     source: str                   # "hackernews" | "rss" | "arxiv" | "github" | "lobsters"
+                                  #   | "stackexchange" | "bluesky" | "mastodon"
     title: str | None
     text: str | None              # body / content
     url: str | None               # external link
@@ -368,8 +420,9 @@ All datetimes are normalized to UTC. Posts are deduplicated by `(source, id)` an
 sorted descending by `(created_at, id)` for deterministic output.
 
 > **`score` is source-relative.** Each source defines it differently — Hacker News
-> points, Lobsters score, GitHub stars (for `search_repos`), and `None` for arXiv
-> and RSS. The values are **not comparable across sources**, so don't rank a mixed
+> points, Lobsters score, GitHub stars (for `search_repos`), Stack Exchange question
+> score, Bluesky likes, Mastodon favourites, and `None` for arXiv and RSS. The values
+> are **not comparable across sources**, so don't rank a mixed
 > feed by `score` directly. Compare within a single `source`, or use a source-aware
 > ranking of your own. Output is ordered by recency (`created_at`), not by `score`.
 
