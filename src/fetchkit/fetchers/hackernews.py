@@ -18,6 +18,7 @@ from fetchkit.schemas.fetcher import (
 )
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 from fetchkit.utils.time import UTC_MIN
 
 
@@ -324,6 +325,17 @@ def fetch_posts(config: HackerNewsFetchConfig) -> list[Post]:
         _attach_comments_to_posts_inplace(final_posts, config.comments)
 
     return final_posts
+
+
+@register_suggester("hackernews")
+def suggest(**kwargs: Any) -> list[dict[str, Any]]:
+    """Discoverability for HN: it has no tag/feed taxonomy, so surface the
+    selectable sort orders (the only knob to pick) rather than a remote lookup."""
+    return [
+        {"order": "top", "description": "Highest-scoring stories in the window."},
+        {"order": "new", "description": "Most recent stories."},
+        {"order": "controversial", "description": "Most-discussed stories."},
+    ]
 
 
 @register_fetcher("hackernews")

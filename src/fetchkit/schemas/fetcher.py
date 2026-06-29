@@ -117,6 +117,76 @@ class LobstersFetchConfig(FetcherBase):
     max_items: int = Field(default=50, ge=1, le=200, description="Max stories to fetch")
 
 
+class StackExchangeFetchConfig(FetcherBase):
+    """Configuration for a Stack Exchange fetcher (api.stackexchange.com, no auth).
+
+    Anonymous access is allowed (no key/OAuth) within a 300 requests/day/IP quota.
+    Questions map to ``Post`` and, when ``comments.fetch`` is set, top answers are
+    attached as ``Comment`` objects.
+    """
+    type: Literal["stackexchange"] = Field(default="stackexchange", description="Built-in fetcher type identifier.")
+    site: str = Field(
+        default="stackoverflow",
+        description="Stack Exchange site API parameter (e.g. 'stackoverflow', 'serverfault', 'superuser').",
+    )
+    tagged: list[str] = Field(
+        default_factory=list,
+        description="Restrict to questions carrying ALL of these tags (e.g. ['python', 'asyncio']).",
+    )
+    query: Optional[str] = Field(
+        default=None,
+        description="Free-text search (uses /search/advanced). Combined with 'tagged' if both set.",
+    )
+    posts: PostFetchConfig = Field(default_factory=PostFetchConfig, description="Question retrieval settings.")
+    comments: CommentFetchConfig = Field(
+        default_factory=CommentFetchConfig,
+        description="Answer retrieval settings; answers are attached as Comments (max_depth is ignored).",
+    )
+
+
+class BlueskyFetchConfig(FetcherBase):
+    """Configuration for a Bluesky fetcher (public.api.bsky.app AppView, no auth).
+
+    The public AppView is unauthenticated by design. Posts map to ``Post``.
+    """
+    type: Literal["bluesky"] = Field(default="bluesky", description="Built-in fetcher type identifier.")
+    resource: Literal["search", "author_feed"] = Field(
+        default="search",
+        description="What to fetch: 'search' (searchPosts) or 'author_feed' (getAuthorFeed).",
+    )
+    query: Optional[str] = Field(
+        default=None, description="Search query, required for resource='search'."
+    )
+    actor: Optional[str] = Field(
+        default=None, description="Handle or DID (e.g. 'bsky.app'), required for resource='author_feed'."
+    )
+    max_items: int = Field(default=50, ge=1, le=500, description="Max posts to fetch (paginated, 100/page)")
+
+
+class MastodonFetchConfig(FetcherBase):
+    """Configuration for a Mastodon fetcher (public/tag timelines, no auth).
+
+    Public and hashtag timelines require no authentication, though an instance
+    admin may disable public preview (in which case requests return 401).
+    """
+    type: Literal["mastodon"] = Field(default="mastodon", description="Built-in fetcher type identifier.")
+    instance: str = Field(
+        default="mastodon.social",
+        description="Instance host (without scheme), e.g. 'mastodon.social', 'fosstodon.org'.",
+    )
+    resource: Literal["tag", "public"] = Field(
+        default="tag",
+        description="Which timeline: 'tag' (/timelines/tag/<tag>) or 'public' (/timelines/public).",
+    )
+    tag: Optional[str] = Field(
+        default=None, description="Hashtag (without '#'), required for resource='tag'."
+    )
+    local: bool = Field(
+        default=False, description="Restrict to statuses originating on this instance (local=true)."
+    )
+    max_items: int = Field(default=50, ge=1, le=200, description="Max statuses to fetch (paginated, 40/page)")
+
+
 # Known builtin fetcher types, keyed by their `type` discriminator.
 _BUILTIN_TYPES: dict[str, type[FetcherBase]] = {
     "hackernews": HackerNewsFetchConfig,
@@ -124,6 +194,9 @@ _BUILTIN_TYPES: dict[str, type[FetcherBase]] = {
     "arxiv": ArxivFetchConfig,
     "github": GitHubFetchConfig,
     "lobsters": LobstersFetchConfig,
+    "stackexchange": StackExchangeFetchConfig,
+    "bluesky": BlueskyFetchConfig,
+    "mastodon": MastodonFetchConfig,
 }
 
 
@@ -152,6 +225,9 @@ FetcherConfig = Annotated[
         ArxivFetchConfig,
         GitHubFetchConfig,
         LobstersFetchConfig,
+        StackExchangeFetchConfig,
+        BlueskyFetchConfig,
+        MastodonFetchConfig,
     ],
     BeforeValidator(_parse_fetcher_config),
 ]

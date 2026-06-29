@@ -11,13 +11,14 @@ Repo/language/topic detail is preserved in ``Post.metadata``.
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from fetchkit.http import get_default_client
 from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import GitHubFetchConfig, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,27 @@ def fetch_posts(config: GitHubFetchConfig) -> list[Post]:
 
     posts = [p for p in posts if _in_window(p, config)]
     return posts[: config.max_items]
+
+
+@register_suggester("github")
+def suggest(*, query: Optional[str] = None, limit: int = 20, **kwargs: Any) -> list[dict[str, Any]]:
+    """Discoverability for GitHub: surface popular repos for a query (drop the
+    ``repo`` names straight into a github 'releases' config). No auth required."""
+    client = get_default_client()
+    q = query or "stars:>10000"
+    params = {"q": q, "sort": "stars", "order": "desc", "per_page": min(100, limit)}
+    resp = client.get(f"{API_BASE}/search/repositories", params=params,
+                      headers=_HEADERS, timeout=DEFAULT_TIMEOUT_S)
+    resp.raise_for_status()
+    out: list[dict[str, Any]] = []
+    for item in resp.json().get("items", [])[:limit]:
+        out.append({
+            "repo": item.get("full_name"),
+            "stars": item.get("stargazers_count"),
+            "language": item.get("language"),
+            "description": item.get("description"),
+        })
+    return out
 
 
 @register_fetcher("github")

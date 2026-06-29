@@ -2,9 +2,9 @@
 fetchkit — a YAML-configured data fetching library for agentic applications.
 
 Fetch posts and comments from sources (Hacker News, RSS/Atom, arXiv, GitHub,
-Lobsters) into a single canonical ``Post`` model, with deduplication, sorting,
-and a typed config. Designed as a data-collection layer for agentic / LLM
-applications.
+Lobsters, Stack Exchange, Bluesky, Mastodon) into a single canonical ``Post``
+model, with deduplication, sorting, and a typed config. Designed as a
+data-collection layer for agentic / LLM applications.
 
 Quick start::
 
@@ -27,6 +27,12 @@ from fetchkit.collector import collect_all
 from fetchkit.config_loader import load_config, ConfigError
 from fetchkit.fetchers.base import Fetcher, FetcherResult
 from fetchkit.fetchers.registry import register_fetcher, get_fetcher
+from fetchkit.fetchers.suggest_registry import (
+    register_suggester,
+    get_suggester,
+    list_suggesters,
+    run_suggester,
+)
 from fetchkit.http import (
     HttpClient,
     RateLimiter,
@@ -46,6 +52,9 @@ from fetchkit.schemas.fetcher import (
     ArxivFetchConfig,
     GitHubFetchConfig,
     LobstersFetchConfig,
+    StackExchangeFetchConfig,
+    BlueskyFetchConfig,
+    MastodonFetchConfig,
     FetcherConfig,
 )
 from fetchkit.schemas.collector import CollectorResult
@@ -85,6 +94,10 @@ __all__ = [
     "FetcherResult",
     "register_fetcher",
     "get_fetcher",
+    "register_suggester",
+    "get_suggester",
+    "list_suggesters",
+    "run_suggester",
     # HTTP
     "HttpClient",
     "RateLimiter",
@@ -105,6 +118,9 @@ __all__ = [
     "ArxivFetchConfig",
     "GitHubFetchConfig",
     "LobstersFetchConfig",
+    "StackExchangeFetchConfig",
+    "BlueskyFetchConfig",
+    "MastodonFetchConfig",
     "FetcherConfig",
     "CollectorResult",
     "FetchKitConfig",

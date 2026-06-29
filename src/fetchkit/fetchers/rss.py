@@ -19,11 +19,23 @@ from fetchkit.schemas.post import Post, Source
 from fetchkit.schemas.fetcher import RSSFetchConfig, RSSFeedDescriptor, FetcherConfig
 from fetchkit.fetchers.base import FetcherResult
 from fetchkit.fetchers.registry import register_fetcher
+from fetchkit.fetchers.suggest_registry import register_suggester
 
 logger = logging.getLogger(__name__)
 
 SOURCE_NAME = Source.RSS
 DEFAULT_TIMEOUT_S = 10
+
+
+@register_suggester("rss")
+def suggest(*, query: Optional[str] = None, limit: int = 10, **kwargs: Any) -> list[dict[str, Any]]:
+    """Discoverability for RSS: map a natural-language ``query`` onto ranked feeds
+    by reusing the existing :func:`fetchkit.discovery.discover` pipeline."""
+    if not query:
+        raise ValueError("rss suggest requires a query (the use case to find feeds for)")
+    from fetchkit.discovery import discover
+
+    return [m.model_dump(mode="json") for m in discover(query, top_k=limit)]
 
 
 class RSSFeedFetchError(Exception):

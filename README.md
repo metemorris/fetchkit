@@ -8,15 +8,16 @@
 A YAML-configured data-fetching library for agentic applications.
 
 `fetchkit` collects posts and comments from sources (Hacker News, RSS/Atom, arXiv,
-GitHub, Lobsters) into a single canonical `Post` model, with de-duplication,
+GitHub, Lobsters, Stack Exchange, Bluesky, Mastodon) into a single canonical `Post`
+model, with de-duplication,
 deterministic sorting, and a shared HTTP client with retries and rate limiting. It is
 designed as the data-collection layer for LLM/agent pipelines — feed it configs, get
 back clean typed data.
 
 - **YAML-first** configuration with strict validation: unknown or misspelled keys
   are rejected up front, so a bad config fails loudly instead of silently.
-- **Builtin fetchers**: Hacker News, RSS/Atom, arXiv, GitHub, and Lobsters — all
-  zero-auth.
+- **Builtin fetchers**: Hacker News, RSS/Atom, arXiv, GitHub, Lobsters, Stack Exchange,
+  Bluesky, and Mastodon — all zero-auth.
 - **Relative time windows**: say `window: "last 6 hours"` instead of computing
   timestamps.
 - **Open `metadata`**: each `Post` carries a `metadata` dict for source-specific
@@ -31,6 +32,9 @@ back clean typed data.
   no Python required.
 - **RSS feed discovery**: `fetchkit discover "<use case>"` maps a natural-language
   query onto real RSS feeds an agent can fetch — closing the "which feed URL?" gap.
+- **Per-source discovery**: `fetchkit suggest <source>` lists the selectable knobs
+  for any source (tags, sites, arXiv categories, trending hashtags, Bluesky feeds) —
+  all zero-auth — so an agent can fill a config without guessing.
 
 ## Install
 
@@ -65,6 +69,15 @@ fetchers:
     repos: ["python/cpython", "pydantic/pydantic"]
   - type: lobsters
     listing: hottest
+  - type: stackexchange
+    site: stackoverflow
+    tagged: ["python", "asyncio"]
+  - type: bluesky
+    resource: search
+    query: "large language models"
+  - type: mastodon
+    instance: mastodon.social
+    tag: ai
   - type: rss
     feeds:
       - url: "https://feeds.bbci.co.uk/news/rss.xml"
@@ -117,7 +130,7 @@ settings, every builtin fetcher's typed config, and the canonical `Post` output 
 so a config can be written without knowing the YAML format out of band:
 
 ```bash
-fetchkit schema | jq '.fetchers | keys'     # ["arxiv","github","hackernews","lobsters","rss"]
+fetchkit schema | jq '.fetchers | keys'     # ["arxiv","bluesky","github","hackernews","lobsters","mastodon","rss","stackexchange"]
 fetchkit schema -o schema.json              # write to a file; supports --compact too
 ```
 
@@ -152,11 +165,12 @@ result = collect_all(config)
 
 ## Discovering RSS feeds
 
-Every other source has a finite, nameable set of options (`fetchkit schema`
-enumerates them). RSS is the exception: a feed is an *arbitrary URL*, so an agent
-that wants "central-bank policy" or "rust programming" has no way to know which
-feeds exist. The optional `discovery` module closes that gap — give it a
+RSS is the hardest source to discover for: a feed is an *arbitrary URL*, so an
+agent that wants "central-bank policy" or "rust programming" has no way to know
+which feeds exist. The optional `discovery` module closes that gap — give it a
 use case, get back ranked feeds you can drop straight into an `rss` fetcher.
+(The other sources have their own, simpler discovery surface — see
+[Discoverability for every source](#discoverability-for-every-source) below.)
 
 ```python
 from fetchkit.discovery import discover, to_rss_config
@@ -212,6 +226,40 @@ Discovery matches a feed's **description/metadata** (what the feed is *about*),
 not the live article stream — for the latter, fetch the feed with the `rss`
 fetcher and match individual posts. Catalog quality is the main lever on result
 quality; see `src/fetchkit/discovery/data/CATALOG.md` to extend it.
+
+## Discoverability for every source
+
+`discover` solves RSS's "which feed URL?" problem. The other sources have a
+*different* discoverability gap — *which tag / site / instance / feed do I put in
+the config?* — answered by `fetchkit suggest <source>` (and `run_suggester()` in
+Python). Each suggester is **no-auth** and returns JSON-ready rows:
+
+```bash
+fetchkit suggest lobsters                                  # all Lobsters tags
+fetchkit suggest stackexchange --site stackoverflow        # popular SO tags
+fetchkit suggest stackexchange --what sites                # available SE sites
+fetchkit suggest arxiv --query vision                      # matching arXiv categories
+fetchkit suggest github --query "language:rust stars:>5000"  # popular repos to watch
+fetchkit suggest mastodon --instance fosstodon.org         # trending hashtags
+fetchkit suggest bluesky                                   # popular custom feeds
+fetchkit suggest bluesky --what actors --query "ai"        # accounts for an author_feed
+fetchkit suggest rss --query "AI safety news"              # delegates to discover()
+```
+
+| Source | `suggest` returns | Fills config field |
+|--------|-------------------|--------------------|
+| `hackernews`    | sort orders (static — HN has no tags)         | `posts.order` |
+| `rss`           | ranked feeds (delegates to `discover`)        | `feeds` |
+| `arxiv`         | category codes + names (static taxonomy)      | `categories` |
+| `github`        | popular `owner/name` repos for a query        | `repos` |
+| `lobsters`      | all tags (from `/tags.json`)                  | `tag` |
+| `stackexchange` | popular tags, or sites (`--what sites`)       | `tagged` / `site` |
+| `bluesky`       | popular feeds, or actors (`--what actors`)    | `actor` |
+| `mastodon`      | trending hashtags on an instance              | `tag` / `instance` |
+
+> Most suggesters call the source's live API (all no-auth); `hackernews`/`arxiv`
+> are static, and `rss` reuses the offline catalog ranker. Network suggesters fail
+> gracefully (the CLI reports the error on stderr and exits non-zero).
 
 ## Configuration reference
 
@@ -310,6 +358,47 @@ The lobste.rs public JSON endpoints (no auth). Tags are preserved in `post.metad
 | `tag`      | null    | Restrict to a single tag (uses `/t/<tag>.json`) |
 | `max_items`| 50      | 1–200                                           |
 
+### Stack Exchange (`type: stackexchange`)
+
+The Stack Exchange API (no auth; anonymous access is capped at 300 requests/day/IP).
+Questions become `Post`s; with `comments.fetch: true`, top answers are attached as
+`Comment`s. Tags, answer count, and the accepted-answer id are kept in `post.metadata`.
+
+| Field      | Default        | Notes                                                       |
+|------------|----------------|-------------------------------------------------------------|
+| `site`     | stackoverflow  | API site, e.g. `serverfault`, `superuser`, `askubuntu`      |
+| `tagged`   | `[]`           | Questions carrying ALL of these tags (joined with `;`)      |
+| `query`    | null           | Free-text search (uses `/search/advanced`)                  |
+| `posts`    | —              | `max_items` (1–500) and `order` (`top`→votes, `new`→creation) |
+| `comments` | —              | `fetch`/`max_items` — answers attached as comments          |
+
+### Bluesky (`type: bluesky`)
+
+The public Bluesky AppView (`public.api.bsky.app`), unauthenticated by design.
+`uri`, `cid`, and `langs` are kept in `post.metadata`; likes map to `score` and
+replies to `comment_count`.
+
+| Field      | Default | Notes                                                        |
+|------------|---------|--------------------------------------------------------------|
+| `resource` | search  | `search` (full-text) or `author_feed`                        |
+| `query`    | null    | Search query — required for `resource: search`               |
+| `actor`    | null    | Handle/DID — required for `resource: author_feed`            |
+| `max_items`| 50      | 1–500 (paginated, 100/page)                                  |
+
+### Mastodon (`type: mastodon`)
+
+Public and hashtag timelines on any instance (no auth, when the instance keeps
+public preview enabled — otherwise requests return 401). HTML content is reduced to
+plain text; tags, instance, and visibility are kept in `post.metadata`.
+
+| Field      | Default          | Notes                                                  |
+|------------|------------------|--------------------------------------------------------|
+| `instance` | mastodon.social  | Instance host without scheme, e.g. `fosstodon.org`     |
+| `resource` | tag              | `tag` (`/timelines/tag/<tag>`) or `public`             |
+| `tag`      | null             | Hashtag without `#` — required for `resource: tag`     |
+| `local`    | false            | Restrict to statuses originating on this instance      |
+| `max_items`| 50               | 1–200 (paginated, 40/page)                             |
+
 ### HTTP (`http:`)
 
 | Field                 | Default                  | Notes                                              |
@@ -342,6 +431,15 @@ validation, and tests. Add a new source via a PR or a local fork in four steps:
 
 3. Import the module in `src/fetchkit/fetchers/__init__.py` so it registers on import.
 4. Add tests (mock HTTP with the `responses` library — see `tests/fetchers/`).
+5. *(Optional)* register a discovery helper so agents can find your source's knobs:
+
+   ```python
+   from fetchkit.fetchers.suggest_registry import register_suggester
+
+   @register_suggester("mysource")
+   def suggest(*, query=None, limit=20, **kwargs) -> list[dict]:
+       return [{"tag": "…"}]   # JSON-ready rows; surfaced via `fetchkit suggest mysource`
+   ```
 
 Use `Post.metadata` for any source-specific fields that don't map to the canonical
 columns.
@@ -352,6 +450,7 @@ columns.
 class Post(BaseModel):
     id: str                       # unique within source
     source: str                   # "hackernews" | "rss" | "arxiv" | "github" | "lobsters"
+                                  #   | "stackexchange" | "bluesky" | "mastodon"
     title: str | None
     text: str | None              # body / content
     url: str | None               # external link
@@ -368,8 +467,9 @@ All datetimes are normalized to UTC. Posts are deduplicated by `(source, id)` an
 sorted descending by `(created_at, id)` for deterministic output.
 
 > **`score` is source-relative.** Each source defines it differently — Hacker News
-> points, Lobsters score, GitHub stars (for `search_repos`), and `None` for arXiv
-> and RSS. The values are **not comparable across sources**, so don't rank a mixed
+> points, Lobsters score, GitHub stars (for `search_repos`), Stack Exchange question
+> score, Bluesky likes, Mastodon favourites, and `None` for arXiv and RSS. The values
+> are **not comparable across sources**, so don't rank a mixed
 > feed by `score` directly. Compare within a single `source`, or use a source-aware
 > ranking of your own. Output is ordered by recency (`created_at`), not by `score`.
 
