@@ -1,0 +1,32 @@
+name: Live tests
+
+# The live tests hit real no-auth source/discovery endpoints (Stack Exchange,
+# Bluesky, Mastodon, GitHub, Lobsters), so they need open outbound network — they
+# run here on GitHub's runners rather than in the main CI. They skip gracefully if
+# an endpoint is unavailable, so a flaky upstream won't fail the run.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly, Monday 06:00 UTC
+  workflow_dispatch: {}     # and on demand
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: live (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Live tests
+        run: pytest -m live -v
