@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-29
+
 ### Added
 - **RSS feed discovery** (`fetchkit.discovery`, optional subpackage). Maps a
   natural-language use case onto real RSS feeds an agent can fetch, closing the
@@ -29,8 +31,25 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and uses
     its candidate sources, ranker backends, and catalog version.
   - Top-level lazy exports: `from fetchkit import discover, find_feeds, to_rss_config, FeedMatch`.
 - `scripts/validate_catalog.py` — offline maintainer tool to validate the catalog.
+- Self-describing `fetchkit schema` command that emits a machine-readable JSON
+  description of fetchkit's capabilities (fetchers, config shape, discovery) so
+  agents can introspect the tool without reading the docs.
 
 The core stays at its four runtime dependencies; all discovery extras are optional.
+
+### Changed
+- Trimmed the canonical model: moved HackerNews-specific converters out of the
+  core model and dropped dead code. `Post.score` is documented as
+  source-relative, not comparable across sources.
+
+### Fixed
+- `RateLimiter` no longer sleeps while holding its lock, so a slow/rate-limited
+  host can no longer stall unrelated requests waiting on the limiter.
+
+### Security
+- RSS feed URLs are guarded against SSRF to internal/private addresses, hardening
+  fetchkit against untrusted or agent-authored configs that could probe the local
+  network.
 
 ## [0.1.1] - 2026-06-27
 
