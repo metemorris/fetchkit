@@ -2,9 +2,9 @@
 fetchkit — a YAML-configured data fetching library for agentic applications.
 
 Fetch posts and comments from sources (Hacker News, RSS/Atom, arXiv, GitHub,
-Lobsters) into a single canonical ``Post`` model, with deduplication, sorting,
-and a typed config. Designed as a data-collection layer for agentic / LLM
-applications.
+Lobsters, Stack Exchange, Bluesky, Mastodon) into a single canonical ``Post``
+model, with deduplication, sorting, and a typed config. Designed as a
+data-collection layer for agentic / LLM applications.
 
 Quick start::
 

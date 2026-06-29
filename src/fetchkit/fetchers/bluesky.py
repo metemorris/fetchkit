@@ -106,9 +106,12 @@ def fetch_posts(config: BlueskyFetchConfig) -> list[Post]:
                     continue
             posts.append(post)
 
-        cursor = data.get("cursor")
-        if not cursor:
+        next_cursor = data.get("cursor")
+        # Stop on an absent or non-advancing cursor (guards against a spin if the
+        # API echoes the same cursor while window-filtering drops every item).
+        if not next_cursor or next_cursor == cursor:
             break
+        cursor = next_cursor
 
     return posts[: config.max_items]
 

@@ -73,6 +73,26 @@ def test_window_filtering() -> None:
     assert fetch_posts(config) == []
 
 
+@responses.activate
+def test_search_terminates_on_repeating_cursor() -> None:
+    # Page always returns a post outside the window plus the SAME cursor; the
+    # guard must stop rather than spin forever. (responses replays the last
+    # registered response, so an unbounded loop would hang this test.)
+    responses.add(
+        responses.GET,
+        f"{XRPC_BASE}/app.bsky.feed.searchPosts",
+        json={"posts": [POST_VIEW], "cursor": "stuck"},
+        status=200,
+    )
+    config = BlueskyFetchConfig(
+        resource="search",
+        query="x",
+        start_time=datetime(2099, 1, 1, tzinfo=timezone.utc),
+        end_time=datetime(2099, 1, 2, tzinfo=timezone.utc),
+    )
+    assert fetch_posts(config) == []
+
+
 def test_search_requires_query() -> None:
     with pytest.raises(ValueError):
         fetch_posts(BlueskyFetchConfig(resource="search"))
